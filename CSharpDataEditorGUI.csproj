@@ -1,0 +1,11 @@
+<Project Sdk="Godot.NET.Sdk/3.3.0">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <Reference Include="JsonCSharpEditorDll">
+      <HintPath>..\CSharpDataEditorDll\bin\Debug\net472\CSharpDataEditorDll.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

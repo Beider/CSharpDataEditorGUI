@@ -1,0 +1,50 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Scenes/Main.cs" type="Script" id=1]
+[ext_resource path="res://Scenes/CSDataObjectTree.tscn" type="PackedScene" id=2]
+
+[node name="Main" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_lock_": true,
+"_edit_use_anchors_": false
+}
+
+[node name="Panel" type="Panel" parent="."]
+self_modulate = Color( 0, 0, 0, 1 )
+anchor_right = 1.0
+anchor_bottom = 1.0
+rect_min_size = Vector2( 0, 50 )
+__meta__ = {
+"_edit_lock_": true,
+"_edit_use_anchors_": false
+}
+
+[node name="HSplitContainer" type="HSplitContainer" parent="Panel"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/separation = 0
+split_offset = 200
+__meta__ = {
+"_edit_lock_": true
+}
+
+[node name="Tree" type="Tree" parent="Panel/HSplitContainer"]
+margin_right = 201.0
+margin_bottom = 600.0
+
+[node name="Button" type="Button" parent="Panel/HSplitContainer/Tree"]
+margin_left = 73.9989
+margin_top = 165.657
+margin_right = 116.999
+margin_bottom = 185.657
+text = "SAVE"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="CSDataObjectTree" parent="Panel/HSplitContainer" instance=ExtResource( 2 )]
+
+[connection signal="pressed" from="Panel/HSplitContainer/Tree/Button" to="." method="OnSavePressed"]

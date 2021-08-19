@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://Scenes/CSDataObjectTree.cs" type="Script" id=1]
+
+[node name="CSDataObjectTree" type="Tree"]
+margin_left = 209.0
+margin_right = 1024.0
+margin_bottom = 600.0
+columns = 2
+hide_root = true
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[connection signal="button_pressed" from="." to="." method="OnButtonPressed"]
+[connection signal="item_collapsed" from="." to="." method="OnTreeItemCollapsed"]
+[connection signal="item_edited" from="." to="." method="OnItemEdited"]
