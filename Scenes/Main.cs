@@ -9,16 +9,16 @@ public class Main : Control
 
 	private CSDataObjectClass DataObjectClass;
 
-    private NewtonsoftJsonConverter Converter;
+	private NewtonsoftJsonConverter Converter;
 
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
 		DisplayTree = FindNode("CSDataObjectTree") as CSDataObjectTree;
-		Test();
+		Reload();
 	}
 
-	private void Test()
+	private void Reload()
 	{
 		Converter = new NewtonsoftJsonConverter();
 		Converter.Init("E:\\Coding\\Godot\\CSharpDataEditor\\TestData", typeof(ConfigSettingsJson), Assembly.GetExecutingAssembly());
@@ -27,10 +27,11 @@ public class Main : Control
 		DisplayTree.InitTree(DataObjectClass);
 	}
 
-    private void OnSavePressed()
-    {
-        Converter.SaveObject("test", DataObjectClass);
-    }
+	private void OnSavePressed()
+	{
+		Converter.SaveObject("test", DataObjectClass);
+		Reload();
+	}
 
 	private void FillDummyConfig(CSDataObjectClass dataObjectClass)
 	{

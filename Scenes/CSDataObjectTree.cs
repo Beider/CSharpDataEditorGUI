@@ -10,11 +10,14 @@ public class CSDataObjectTree : Tree
 	public const string METADATA_TREE_ITEM = "TreeItem";
 	private const string IMAGE_ADD = "res://Assets/Images/add.png";
 	private const string IMAGE_REMOVE = "res://Assets/Images/remove.png";
+	private const string IMAGE_ERROR = "res://Assets/Images/hazard-sign.png";
 	private const string MESSAGE_DELETE_KEY = "(Hold SHIFT when pressing to delete)";
+	private const string MESSAGE_ERROR_KEY = "(Hold SHIFT and click to roll back)";
 	private const int KEY_DELETE = (int)KeyList.Shift;
 
 	private const int BUTTON_ADD_ID = 0;
 	private const int BUTTON_REMOVE_ID = 1;
+	private const int BUTTON_ERROR_ID = 2;
 
 	private CSDataObjectClass DataObjectClass = null;
 	private bool Redraw = false;
@@ -73,6 +76,18 @@ public class CSDataObjectTree : Tree
 				((CSDataObjectMemberArray)dataObject.Parent).Remove(dataObject.Index);
 				treeItem.Free();
 				break;
+			case BUTTON_ERROR_ID:
+				if (!IsDeleteKeyPressed())
+				{
+					return;
+				}
+				CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(METADATA_DISPLAY_OVERRIDE_TARGET, null);
+				if (target == null)
+				{
+					target = (CSDataObjectMember)dataObject;
+				}
+				ItemEdited(treeItem, column, target, target.InitialValue);
+				break;
 		}
 	}
 
@@ -92,22 +107,50 @@ public class CSDataObjectTree : Tree
 		string newValue = item.GetText(column);
 
 		// Deal with target override
-		CSDataObjectMember targetOverride = dataObject.GetMetadata<CSDataObjectMember>(METADATA_DISPLAY_OVERRIDE_TARGET, null);
-		if (targetOverride != null)
+		CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(METADATA_DISPLAY_OVERRIDE_TARGET, null);
+		if (target == null)
 		{
-			targetOverride.SetValue(newValue);
-			targetOverride.GetMetadata<TreeItem>(METADATA_TREE_ITEM, null).SetText(1, newValue);
+			target = (CSDataObjectMember)dataObject;
 		}
-		else
+		ItemEdited(item, column, target, newValue);
+	}
+
+	private void ItemEdited(TreeItem item, int column, CSDataObjectMember target, string newValue)
+	{
+		target.SetValue(newValue);
+		item.SetText(column, newValue);
+		UpdateErrorState(item, column, target.CurrentError);
+
+		TreeItem otherItem = target.GetMetadata<TreeItem>(METADATA_TREE_ITEM, null);
+		if (otherItem != null && otherItem != item)
 		{
-			((CSDataObjectMember)dataObject).SetValue(newValue);
+			otherItem.SetText(1, newValue);
+			UpdateErrorState(otherItem, 1, target.CurrentError);
 		}
 
 		// Deal with display override
-		object displayOverride = dataObject.GetMetadata<TreeItem>(METADATA_DISPLAY_OVERRIDE, null);
+		object displayOverride = target.GetMetadata<TreeItem>(METADATA_DISPLAY_OVERRIDE, null);
 		if (displayOverride != null)
 		{
 			((TreeItem)displayOverride).SetText(0, newValue);
+			UpdateErrorState((TreeItem)displayOverride, 0, target.CurrentError);
+		}
+	}
+
+	private void UpdateErrorState(TreeItem item, int column, string error)
+	{
+		Texture errorTexture = Utils.LoadTextureFromFile(IMAGE_ERROR);
+		// Remove existing button
+		for (int i=item.GetButtonCount(column); i >= 0; i--)
+		{
+			if (item.GetButton(column, i) == errorTexture)
+			{
+				item.EraseButton(column, i);
+			}
+		}
+		if (error != null)
+		{
+			item.AddButton(column, errorTexture, BUTTON_ERROR_ID, false, $"{error} {MESSAGE_ERROR_KEY}");
 		}
 	}
 
@@ -191,7 +234,7 @@ public class CSDataObjectTree : Tree
 		if (dataObject is CSDataObjectMember)
 		{
 			item.SetEditable(1, true);
-			item.SetText(1, ((CSDataObjectMember)dataObject).GetCurrentValueText());
+			item.SetText(1, ((CSDataObjectMember)dataObject).CurrentValue);
 		}
 		item.Collapsed = (bool)dataObject.GetMetadata(METADATA_COLLAPSED, false);
 
