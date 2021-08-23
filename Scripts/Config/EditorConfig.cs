@@ -10,30 +10,37 @@ public partial class ConfigSettingsJson
     public List<ConfigProjects> Projects = new List<ConfigProjects>();
 }
 
-// TODO: Add color and such
 [CSDODisplayNameOverride(nameof(Name))]
+[CSDOVisibilityModifierStatic(null, "", typeof(ConfigProjects), nameof(ChildrenVisible))]
+[CSDOStartCollapsed]
 public partial class ConfigProjects
 {
     [JsonProperty("name")]
-    public string Name = "";
+    [CSDOVisibilityModifier]
+    public string Name = DEFAULT_NAME;
 
     [JsonProperty("binarylocation")]
     public string BinaryLocation = "";
 
     [JsonProperty("scanintervalms")]
+    [CSDOVisibilityModifierMember(nameof(BinaryLocation), "a")]
     public int CommandScanIntervalMs = 250;
 
     [JsonProperty("commandsfolder")]
+    [CSDOVisibilityModifierMember(nameof(BinaryLocation), "a")]
     public string CommandFileFolder = "";
 
     [JsonProperty("editors")]
     public List<ConfigEditors> Editors = new List<ConfigEditors>();
 }
 
+[CSDODisplayNameOverride(nameof(Name))]
+[CSDOVisibilityModifierStatic(null, "", typeof(ConfigEditors), nameof(ChildrenVisible))]
 public partial class ConfigEditors
 {
     [JsonProperty("name")]
-    public string Name = "";
+    [CSDOVisibilityModifier]
+    public string Name = DEFAULT_NAME;
 
     // Used for sending commands
     [JsonProperty("commandkey")]

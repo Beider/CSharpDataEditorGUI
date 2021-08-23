@@ -14,9 +14,17 @@ config/name="CSharpDataEditorGUI"
 run/main_scene="res://Scenes/Main.tscn"
 config/icon="res://icon.png"
 
+[autoload]
+
+Settings="*res://Scripts/Managers/Settings.cs"
+
 [editor_plugins]
 
 enabled=PoolStringArray( "res://addons/mono_debugger/plugin.cfg" )
+
+[mono]
+
+debugger_agent/wait_for_debugger=true
 
 [physics]
 
