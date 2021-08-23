@@ -17,8 +17,8 @@ public class Settings : Node
 
     private void InitRenderers()
     {
-        //TODO: Resolve the packed scene for the renderer
-        RendererTypes.Add(CSDOList.LIST_RENDERER_TYPE, null);
+        PackedScene rendererScene = ResourceLoader.Load("res://Scenes/Renderers/ListRenderer.tscn") as PackedScene;
+        RendererTypes.Add(CSDOList.LIST_RENDERER_TYPE, rendererScene);
     }
 
     /// <summary>
@@ -26,11 +26,11 @@ public class Settings : Node
     /// </summary>
     /// <param name="rendererType">The type of renderer</param>
     /// <returns>The renderer scene or null if not found</returns>
-    public PackedScene GetRendererScene(string rendererType)
+    public static PackedScene GetRendererScene(string rendererType)
     {
-        if (RendererTypes.ContainsKey(rendererType))
+        if (Instance.RendererTypes.ContainsKey(rendererType))
         {
-            return RendererTypes[rendererType];
+            return Instance.RendererTypes[rendererType];
         }
         return null;
     }

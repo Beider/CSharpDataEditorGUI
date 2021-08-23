@@ -20,10 +20,10 @@ public class Main : Control
 
 	private void Reload()
 	{
+		GD.Print("Reloading");
 		Converter = new NewtonsoftJsonConverter();
-		Converter.Init("E:\\Coding\\Godot\\CSharpDataEditor\\TestData", typeof(ConfigSettingsJson), Assembly.GetExecutingAssembly());
+		Converter.Init("E:\\Coding\\Godot\\CSharpDataEditor\\TestData", nameof(ConfigSettingsJson), Assembly.GetExecutingAssembly().Location);
 		DataObjectClass = Converter.GetObject("test");
-		//FillDummyConfig(DataObjectClass);
 		DisplayTree.InitTree(DataObjectClass);
 	}
 
@@ -31,19 +31,6 @@ public class Main : Control
 	{
 		Converter.SaveObject("test", DataObjectClass);
 		Reload();
-	}
-
-	private void FillDummyConfig(CSDataObjectClass dataObjectClass)
-	{
-		CSDataObjectMemberArray projects = (CSDataObjectMemberArray)dataObjectClass.ClassMembers[0];
-		CSDataObjectClass confProjects =  (CSDataObjectClass)projects.AddNew();
-		((CSDataObjectMember)confProjects.ClassMembers[0]).SetValue("Some name");
-
-		confProjects =  (CSDataObjectClass)projects.AddNew();
-		((CSDataObjectMember)confProjects.ClassMembers[0]).SetValue("OtherName");
-
-		confProjects =  (CSDataObjectClass)projects.AddNew();
-		((CSDataObjectMember)confProjects.ClassMembers[0]).SetValue("NoName");
 	}
 
 }

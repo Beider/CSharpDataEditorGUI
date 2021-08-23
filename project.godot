@@ -22,10 +22,6 @@ Settings="*res://Scripts/Managers/Settings.cs"
 
 enabled=PoolStringArray( "res://addons/mono_debugger/plugin.cfg" )
 
-[mono]
-
-debugger_agent/wait_for_debugger=true
-
 [physics]
 
 common/enable_pause_aware_picking=true

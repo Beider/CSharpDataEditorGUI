@@ -12,7 +12,3 @@ script = ExtResource( 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
-
-[connection signal="button_pressed" from="." to="." method="OnButtonPressed"]
-[connection signal="item_collapsed" from="." to="." method="OnTreeItemCollapsed"]
-[connection signal="item_edited" from="." to="." method="OnItemEdited"]

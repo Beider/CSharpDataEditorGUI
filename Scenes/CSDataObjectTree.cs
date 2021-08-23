@@ -3,25 +3,18 @@ using System;
 using System.Collections.Generic;
 using CSharpDataEditorDll;
 
-public class CSDataObjectTree : Tree
+public class CSDataObjectTree : Tree, IDataObjectDisplay
 {
-#region CONSTANTS
-	public const string METADATA_COLLAPSED = "Collapsed";
-	public const string METADATA_DISPLAY_OVERRIDE = "DisplayOverride";
-	public const string METADATA_DISPLAY_OVERRIDE_TARGET = "OverrideBy";
-	public const string METADATA_VISMOD_SELF = "VMSelf";
-	public const string METADATA_VISMOD_CHILDREN = "VMChildren";
-	public const string METADATA_TREE_ITEM = "TreeItem";
-	private const string IMAGE_ADD = "res://Assets/Images/add.png";
-	private const string IMAGE_REMOVE = "res://Assets/Images/remove.png";
-	private const string IMAGE_ERROR = "res://Assets/Images/hazard-sign.png";
-	private const string MESSAGE_DELETE_KEY = "(Hold SHIFT when pressing to delete)";
-	private const string MESSAGE_ERROR_KEY = "(Hold SHIFT and click to roll back)";
-	private const int KEY_DELETE = (int)KeyList.Shift;
-#endregion
-
 	private CSDataObjectClass DataObjectClass = null;
 	private bool Redraw = false;
+
+	public override void _Ready()
+	{
+		Connect("item_edited", this, nameof(OnItemEdited));
+		Connect("item_collapsed", this, nameof(OnTreeItemCollapsed));
+		Connect("custom_popup_edited", this, nameof(OnOpenCustomEditor));
+		Connect("button_pressed", this, nameof(OnButtonPressed));
+	}
 
 	public void InitTree(CSDataObjectClass rootObject)
 	{
@@ -56,7 +49,7 @@ public class CSDataObjectTree : Tree
 	{
 		string key = (string)item.GetMetadata(0);
 		CSDataObject dataObject = DataObjectClass.GetObjectByKey(key);
-		dataObject.SetMetadata(METADATA_COLLAPSED, item.Collapsed);
+		dataObject.SetMetadata(Constants.METADATA_COLLAPSED, item.Collapsed);
 	}
 
 	private void OnButtonPressed(TreeItem treeItem, int column, int id)
@@ -65,12 +58,12 @@ public class CSDataObjectTree : Tree
 		CSDataObject dataObject = DataObjectClass.GetObjectByKey(key);
 		Texture buttonTexture = treeItem.GetButton(column, id);
 		
-		if (buttonTexture == Utils.LoadTextureFromFile(IMAGE_ADD))
+		if (buttonTexture == Utils.LoadTextureFromFile(Constants.IMAGE_ADD))
 		{
 			CSDataObject newObject = ((CSDataObjectMemberArray)dataObject).AddNew();
 			RenderItem(newObject, treeItem);
 		}
-		else if (buttonTexture == Utils.LoadTextureFromFile(IMAGE_REMOVE))
+		else if (buttonTexture == Utils.LoadTextureFromFile(Constants.IMAGE_REMOVE))
 		{
 			if (!IsDeleteKeyPressed())
 			{
@@ -79,18 +72,19 @@ public class CSDataObjectTree : Tree
 			((CSDataObjectMemberArray)dataObject.Parent).Remove(dataObject.Index);
 			treeItem.Free();
 		}
-		else if (buttonTexture == Utils.LoadTextureFromFile(IMAGE_ERROR))
+		else if (buttonTexture == Utils.LoadTextureFromFile(Constants.IMAGE_ERROR))
 		{
 			if (!IsDeleteKeyPressed())
 			{
 				return;
 			}
-			CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(METADATA_DISPLAY_OVERRIDE_TARGET, null);
+			CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(Constants.METADATA_DISPLAY_OVERRIDE_TARGET, null);
 			if (target == null)
 			{
 				target = (CSDataObjectMember)dataObject;
 			}
-			ItemEdited(treeItem, column, target, target.InitialValue);
+			target.SetValue(target.InitialValue);
+			ItemEdited(target);
 		}
 		RefreshAllVisibilityMods();
 	}
@@ -111,104 +105,137 @@ public class CSDataObjectTree : Tree
 		string newValue = item.GetText(column);
 
 		// Deal with target override
-		CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(METADATA_DISPLAY_OVERRIDE_TARGET, null);
+		CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(Constants.METADATA_DISPLAY_OVERRIDE_TARGET, null);
 		if (target == null)
 		{
 			target = (CSDataObjectMember)dataObject;
 		}
-		ItemEdited(item, column, target, newValue);
+		target.SetValue(newValue);
+		ItemEdited(target);
 		RefreshAllVisibilityMods();
 	}
 
-	private void ItemEdited(TreeItem item, int column, CSDataObjectMember target, string newValue)
+	private void ItemEdited(CSDataObjectMember target)
 	{
-		target.SetValue(newValue);
-		item.SetText(column, newValue);
-		UpdateErrorState(item, column, target.CurrentError);
-
-		TreeItem otherItem = target.GetMetadata<TreeItem>(METADATA_TREE_ITEM, null);
-		if (otherItem != null && otherItem != item)
+		TreeItem treeItem = target.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
+		if (treeItem != null)
 		{
-			otherItem.SetText(1, newValue);
-			UpdateErrorState(otherItem, 1, target.CurrentError);
+			SetItemText(treeItem, target);
+			UpdateErrorState(treeItem, 1, target.CurrentError);
 		}
 
 		// Deal with display override
-		object displayOverride = target.GetMetadata<TreeItem>(METADATA_DISPLAY_OVERRIDE, null);
+		CSDataObject displayOverride = target.GetMetadata<CSDataObject>(Constants.METADATA_DISPLAY_OVERRIDE, null);
 		if (displayOverride != null)
 		{
-			((TreeItem)displayOverride).SetText(0, newValue);
-			UpdateErrorState((TreeItem)displayOverride, 0, target.CurrentError);
+			TreeItem overrideItem = displayOverride.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
+			SetItemText(overrideItem, displayOverride);
+			UpdateErrorState(overrideItem, 0, target.CurrentError);
 		}
+	}
+
+	public void UpdateDataObject(CSDataObjectMember dataObject, string newValue)
+	{
+		TreeItem item = dataObject.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
+		int column = dataObject.GetMetadata<int>(Constants.METADATA_EDITABLE_COLUMN_NUM, 1);
+		dataObject.SetValue(newValue);
+		ItemEdited(dataObject);
+		RefreshAllVisibilityMods();
 	}
 
 	private void UpdateErrorState(TreeItem item, int column, string error)
 	{
-		Texture errorTexture = Utils.LoadTextureFromFile(IMAGE_ERROR);
+		Texture errorTexture = Utils.LoadTextureFromFile(Constants.IMAGE_ERROR);
 		// Remove existing button
-		for (int i=0; i < item.GetButtonCount(column); i++)
-		{
-			if (item.GetButton(column, i) == errorTexture)
-			{
-				item.EraseButton(column, i);
-				break;
-			}
-		}
+		EraseButton(item, errorTexture, column);
+
 		if (error != null)
 		{
-			item.AddButton(column, errorTexture, -1, false, $"{error} {MESSAGE_ERROR_KEY}");
+			item.AddButton(column, errorTexture, -1, false, $"{error} {Constants.MESSAGE_ERROR_KEY}");
 		}
 	}
 
-    /// <summary>
-    /// Refresh any data object that has a visibility modifer that changed
-    /// </summary>
+	private void OnOpenCustomEditor(bool arrow_clicked)
+	{
+		// Get the things we need
+		TreeItem item = GetEdited();
+		int col = GetEditedColumn();
+		string key = (string)item.GetMetadata(0);
+		CSDataObject dataObject = DataObjectClass.GetObjectByKey(key);
+		CSDORenderer renderer = dataObject.GetCustomAttribute<CSDORenderer>();
+		PackedScene scene = Settings.GetRendererScene(renderer.GetRenderType());
+
+		// Instance the scene from the renderer
+		if (scene != null)
+		{
+			Control instance = scene.Instance() as Control;
+			AddChild(instance);
+			((IRenderer)instance).ShowRenderer((CSDataObjectMember) dataObject, GetCustomPopupRect(), this);
+		}
+	}
+
+	/// <summary>
+	/// Refresh any data object that has a visibility modifer that changed
+	/// </summary>
 	private void RefreshAllVisibilityMods()
 	{
 		List<CSDataObject> visModObjects = DataObjectClass.GetAllWithCustomAttribute<CSDOVisibilityModifier>();
+
+		// We collect what we need to refresh to avoid duplicates
+		List<CSDataObject> objectsToRefresh = new List<CSDataObject>();
 
 		foreach (CSDataObject dataObject in visModObjects)
 		{
 			if (RefreshVisibilityMod(dataObject) && dataObject.Parent != null)
 			{
-                // Ensure all parents children are visible, else dont refresh
-                if (!AllParentChildrenVisibile(dataObject.Parent))
-                {
-                    continue;
-                }
+				// Ensure all parents children are visible, else dont refresh
+				if (!AllParentChildrenVisibile(dataObject.Parent))
+				{
+					continue;
+				}
 
-                // Small hack to start expanded after vis change
-                dataObject.SetMetadata(METADATA_COLLAPSED, false);
+				// Small hack to start expanded after vis change
+				dataObject.SetMetadata(Constants.METADATA_COLLAPSED, false);
 
-				// Get the parent tree item
-				TreeItem parent = dataObject.Parent.GetMetadata<TreeItem>(METADATA_TREE_ITEM, null);
-                
-                // Refresh all children of the parent to maintain ordering (could be more efficient)
-                foreach (CSDataObject child in dataObject.Parent.GetChildren())
-                {
-                    TreeItem childItem = child.GetMetadata<TreeItem>(METADATA_TREE_ITEM, null);
-                    if (childItem != null)
-                    {
-                        childItem.Free();
-                    }
-                    RenderItem(child, parent);
-                }
+				// Only collect parents once
+				if (!objectsToRefresh.Contains(dataObject.Parent))
+				{
+					objectsToRefresh.Add(dataObject.Parent);
+				}
+			}
+		}
+
+		// We do this here to refresh as little as possible
+		foreach (CSDataObject dataObject in objectsToRefresh)
+		{
+			// Get the tree item
+			TreeItem parent = dataObject.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
+			
+			// Refresh all children of the tree item to maintain ordering (could be more efficient)
+			foreach (CSDataObject child in dataObject.GetChildren())
+			{
+				TreeItem childItem = child.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
+				if (childItem != null)
+				{
+					childItem.Free();
+				}
+				RenderItem(child, parent);
 			}
 		}
 	}
 
-    private bool AllParentChildrenVisibile(CSDataObject dataObject)
-    {
-        if (dataObject.GetMetadata<bool>(METADATA_VISMOD_CHILDREN, true) == false)
-        {
-            return false;
-        }
-        if (dataObject.Parent != null)
-        {
-            return AllParentChildrenVisibile(dataObject.Parent);
-        }
-        return true;
-    }
+	private bool AllParentChildrenVisibile(CSDataObject dataObject)
+	{
+		if (dataObject.GetMetadata<bool>(Constants.METADATA_VISMOD_CHILDREN, true) == false)
+		{
+			return false;
+		}
+		if (dataObject.Parent != null)
+		{
+			return AllParentChildrenVisibile(dataObject.Parent);
+		}
+		return true;
+	}
 
 #endregion
 
@@ -222,27 +249,27 @@ public class CSDataObjectTree : Tree
 		return item;
 	}
 
-    private TreeItem RenderSelf(CSDataObject dataObject, TreeItem parent)
-    {
-        TreeItem returnItem = parent;
-        if (dataObject.GetMetadata<bool>(METADATA_VISMOD_SELF, true))
+	private TreeItem RenderSelf(CSDataObject dataObject, TreeItem parent)
+	{
+		TreeItem returnItem = parent;
+		if (dataObject.GetMetadata<bool>(Constants.METADATA_VISMOD_SELF, true))
 		{
 			returnItem = CreateItem(parent);
 			SetItemText(returnItem, dataObject);
 		}
-        return returnItem;
-    }
+		return returnItem;
+	}
 
-    private void RenderChildren(CSDataObject dataObject, TreeItem parent)
-    {
-        if (dataObject.GetMetadata<bool>(METADATA_VISMOD_CHILDREN, true))
+	private void RenderChildren(CSDataObject dataObject, TreeItem parent)
+	{
+		if (dataObject.GetMetadata<bool>(Constants.METADATA_VISMOD_CHILDREN, true))
 		{
 			foreach (CSDataObject child in dataObject.GetChildren())
 			{
 				RenderItem(child, parent);
 			}
 		}
-    }
+	}
 
 	/// <summary>
 	/// Refresh the visibility mods for this item, returns true if we need refresh
@@ -255,17 +282,17 @@ public class CSDataObjectTree : Tree
 		bool needRefresh = false;
 		if (visibilityMod != null)
 		{
-			object oldValue = dataObject.GetMetadata(METADATA_VISMOD_SELF);
+			object oldValue = dataObject.GetMetadata(Constants.METADATA_VISMOD_SELF);
 			bool newValue = visibilityMod.IsSelfVisible(dataObject);
-			dataObject.SetMetadata(METADATA_VISMOD_SELF, newValue);
+			dataObject.SetMetadata(Constants.METADATA_VISMOD_SELF, newValue);
 			if (oldValue == null || (bool)oldValue != newValue)
 			{
 				needRefresh = true;
 			}
 
-			oldValue = dataObject.GetMetadata(METADATA_VISMOD_CHILDREN);
+			oldValue = dataObject.GetMetadata(Constants.METADATA_VISMOD_CHILDREN);
 			newValue = visibilityMod.AreChildrenVisible(dataObject);
-			dataObject.SetMetadata(METADATA_VISMOD_CHILDREN, newValue);
+			dataObject.SetMetadata(Constants.METADATA_VISMOD_CHILDREN, newValue);
 			if (oldValue == null || (bool)oldValue != newValue)
 			{
 				needRefresh = true;
@@ -279,7 +306,7 @@ public class CSDataObjectTree : Tree
 	{
 		// SET METADATA KEY
 		item.SetMetadata(0, dataObject.GetKey());
-		dataObject.SetMetadata(METADATA_TREE_ITEM, item);
+		dataObject.SetMetadata(Constants.METADATA_TREE_ITEM, item);
 
 		// SET LEFT COLUMN VALUE
 		CSDODisplayNameOverride displayOverride = dataObject.GetCustomAttribute<CSDODisplayNameOverride>();
@@ -287,8 +314,10 @@ public class CSDataObjectTree : Tree
 		{
 			CSDataObjectMember displayOverrideMember = (CSDataObjectMember)dataObject.GetObjectByKey(displayOverride.MemberName+"/");
 			string currentValue = (string)displayOverrideMember.CurrentValue;
-			displayOverrideMember.SetMetadata(METADATA_DISPLAY_OVERRIDE, item);
-			dataObject.SetMetadata(METADATA_DISPLAY_OVERRIDE_TARGET, displayOverrideMember);
+			displayOverrideMember.SetMetadata(Constants.METADATA_DISPLAY_OVERRIDE, dataObject);
+			dataObject.SetMetadata(Constants.METADATA_DISPLAY_OVERRIDE_TARGET, displayOverrideMember);
+			dataObject.SetMetadata(Constants.METADATA_EDITABLE_COLUMN_NUM, 0);
+			SetColor(item, displayOverrideMember, 0);
 			item.SetEditable(0, true);
 			if (currentValue != null && currentValue != "")
 			{
@@ -303,20 +332,54 @@ public class CSDataObjectTree : Tree
 		// SET RIGHT COLUMN VALUE
 		if (dataObject is CSDataObjectMember)
 		{
+			string currentValue = ((CSDataObjectMember)dataObject).CurrentValue;
+			dataObject.SetMetadata(Constants.METADATA_EDITABLE_COLUMN_NUM, 1);
+			SetColor(item, (CSDataObjectMember) dataObject, 1);
 			item.SetEditable(1, true);
-			item.SetText(1, ((CSDataObjectMember)dataObject).CurrentValue);
+			item.SetText(1, currentValue);
 		}
-        if (dataObject.GetMetadata(METADATA_COLLAPSED) != null)
-        {
-		    item.Collapsed = (bool)dataObject.GetMetadata(METADATA_COLLAPSED, false);
-        }
-        else
-        {
-            item.Collapsed = dataObject.GetCustomAttribute<CSDOStartCollapsed>() != null;
-        }
+		if (dataObject.GetMetadata(Constants.METADATA_COLLAPSED) != null)
+		{
+			item.Collapsed = (bool)dataObject.GetMetadata(Constants.METADATA_COLLAPSED, false);
+		}
+		else
+		{
+			item.Collapsed = dataObject.GetCustomAttribute<CSDOStartCollapsed>() != null;
+		}
 
 		// ADD BUTTONS
 		AddCollectionButtons(item, dataObject);
+	}
+
+	/// <summary>
+	/// Set the item color
+	/// </summary>
+	/// <param name="item">The tree item</param>
+	/// <param name="renderer">The renderer to use</param>
+	/// <param name="dataObject">The data object we are rendering</param>
+	private void SetColor(TreeItem item, CSDataObjectMember dataObject, int textColumn)
+	{
+		CSDORenderer renderer = dataObject.GetCustomAttribute<CSDORenderer>();
+		if (renderer == null)
+		{
+			return;
+		}
+		if (renderer.GetRenderType() != null)
+		{
+			item.SetCellMode(textColumn, TreeItem.TreeCellMode.Custom);
+		}
+		Color color = Utils.ResolveColorFromString(renderer.GetColor(dataObject.CurrentValue, dataObject));
+		if (color != Colors.Transparent)
+		{
+			item.SetCustomColor(textColumn, color);
+		}
+
+		color = Utils.ResolveColorFromString(renderer.GetBgColor(dataObject.CurrentValue, dataObject));
+		if (color != Colors.Transparent)
+		{
+			item.SetCustomBgColor(0, color);
+			item.SetCustomBgColor(1, color);
+		}
 	}
 
 	private void AddCollectionButtons(TreeItem item, CSDataObject dataObject)
@@ -325,22 +388,36 @@ public class CSDataObjectTree : Tree
 		if (dataObject.Index >= 0)
 		{
 			// Remove button
-			texture = Utils.LoadTextureFromFile(IMAGE_REMOVE);
-			item.AddButton(0, texture, -1, false, $"Remove {MESSAGE_DELETE_KEY}");
+			texture = Utils.LoadTextureFromFile(Constants.IMAGE_REMOVE);
+			EraseButton(item, texture, 0);
+			item.AddButton(0, texture, -1, false, $"Remove {Constants.MESSAGE_DELETE_KEY}");
 		}
 
 		if (dataObject is CSDataObjectMemberArray)
 		{
 			// Add button
-			texture = Utils.LoadTextureFromFile(IMAGE_ADD);
+			texture = Utils.LoadTextureFromFile(Constants.IMAGE_ADD);
+			EraseButton(item, texture, 0);
 			item.AddButton(0, texture, -1, false, "Add");
+		}
+	}
+
+	private void EraseButton(TreeItem item, Texture button, int column)
+	{
+		for (int i=0; i < item.GetButtonCount(column); i++)
+		{
+			if (item.GetButton(column, i) == button)
+			{
+				item.EraseButton(column, i);
+				break;
+			}
 		}
 	}
 #endregion
 
 	private bool IsDeleteKeyPressed()
 	{
-		return Input.IsKeyPressed(KEY_DELETE);
+		return Input.IsKeyPressed(Constants.KEY_DELETE);
 	}
 
 }
