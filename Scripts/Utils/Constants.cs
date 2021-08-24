@@ -4,6 +4,7 @@ using System;
 public static class Constants
     {
     public const string METADATA_COLLAPSED = "Collapsed";
+    public const string METADATA_COLLAPSED_DRAG = "Collapsed_Drag";
     public const string METADATA_DISPLAY_OVERRIDE = "DisplayOverride";
     public const string METADATA_DISPLAY_OVERRIDE_TARGET = "OverrideBy";
     public const string METADATA_VISMOD_SELF = "VMSelf";

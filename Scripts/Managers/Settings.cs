@@ -6,6 +6,9 @@ using CSharpDataEditorDll;
 public class Settings : Node
 {
     public static Settings Instance;
+
+    public static bool CollapseOnDrag {get; private set;} = true;
+
     private Dictionary<string, PackedScene> RendererTypes = new Dictionary<string, PackedScene>();
 
     // Called when the node enters the scene tree for the first time.

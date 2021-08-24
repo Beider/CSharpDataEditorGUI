@@ -8,6 +8,8 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 	private CSDataObjectClass DataObjectClass = null;
 	private bool Redraw = false;
 
+	private CSDataObjectMemberArray DragObjectParent = null;
+
 	public override void _Ready()
 	{
 		Connect("item_edited", this, nameof(OnItemEdited));
@@ -29,6 +31,12 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			Redraw = false;
 			BuildTree();
 		}
+		if (!GetViewport().GuiIsDragging() && DragObjectParent != null)
+		{
+			CollapseChildren(DragObjectParent, false);
+			DragObjectParent = null;
+			GD.Print("Drag stop");
+		}
 	}
 
 	private void BuildTree()
@@ -42,6 +50,121 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			RenderItem(DataObjectClass, null);
 		}
 	}
+
+#region DRAG & DROP
+
+	/// <summary>
+	/// We only allow dragging of array members
+	/// </summary>
+	public override object GetDragData(Vector2 position)
+	{
+		TreeItem treeItem = GetSelected();
+		string key = (string)treeItem.GetMetadata(0);
+		CSDataObject dataObject = DataObjectClass.GetObjectByKey(key);
+
+		if (dataObject.Parent == null || !(dataObject.Parent is CSDataObjectMemberArray))
+		{
+			return null;
+		}
+
+		DropModeFlags = (int)DropModeFlagsEnum.Inbetween;
+
+		// Drag preview
+		Label preview = new Label();
+		preview.Text = treeItem.GetText(0);
+		SetDragPreview(preview);
+
+		if (Settings.CollapseOnDrag)
+		{
+			// Collapse all
+			DragObjectParent = (CSDataObjectMemberArray)dataObject.Parent;
+			CollapseChildren(DragObjectParent, true);
+		}
+
+		return treeItem;
+	}
+
+	private void CollapseChildren(CSDataObjectMemberArray dataObject, bool collapse)
+	{
+		foreach (CSDataObject child in dataObject.GetChildren())
+		{
+			TreeItem item = child.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
+			if (item != null)
+			{
+				if (collapse)
+				{
+					child.SetMetadata(Constants.METADATA_COLLAPSED_DRAG, item.Collapsed);
+					item.Collapsed = true;
+				}
+				else
+				{
+					item.Collapsed = child.GetMetadata<bool>(Constants.METADATA_COLLAPSED_DRAG, false);
+				}
+			}
+		}
+	}
+
+	/// <summary>
+	/// We only allow dropping on top of the array members
+	/// </summary>
+	public override bool CanDropData(Vector2 position, object data)
+	{
+		if (!(data is TreeItem))
+		{
+			DropModeFlags = (int)DropModeFlagsEnum.Disabled;
+			return false;
+		}
+		TreeItem treeItem = GetItemAtPosition(position);
+		if (treeItem == null)
+		{
+			DropModeFlags = (int)DropModeFlagsEnum.Disabled;
+			return false;
+		}
+
+		string key = (string)treeItem.GetMetadata(0);
+		CSDataObject targetObject = DataObjectClass.GetObjectByKey(key);
+		key = (string)((TreeItem)data).GetMetadata(0);
+		CSDataObject dropObject = DataObjectClass.GetObjectByKey(key);
+
+		if (dropObject.Parent != targetObject.Parent)
+		{
+			DropModeFlags = (int)DropModeFlagsEnum.Disabled;
+			return false;
+		}
+
+		DropModeFlags = (int)DropModeFlagsEnum.Inbetween;
+		return true;
+	}
+
+	public override void DropData(Vector2 position, object data)
+	{
+		TreeItem treeItem = GetItemAtPosition(position);
+		string key = (string)treeItem.GetMetadata(0);
+		CSDataObject targetObject = DataObjectClass.GetObjectByKey(key);
+		key = (string)((TreeItem)data).GetMetadata(0);
+		CSDataObject dropObject = DataObjectClass.GetObjectByKey(key);
+
+		if (targetObject == dropObject)
+		{
+			return;
+		}
+
+		if (dropObject.Parent == targetObject.Parent)
+		{
+			int section = GetDropSectionAtPosition(position);
+			CSDataObjectMemberArray array = (CSDataObjectMemberArray)dropObject.Parent;
+			array.Move(dropObject.Index, targetObject.Index, section < 1 );
+
+			// Redraw the entire parent
+			TreeItem pItem = dropObject.Parent.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
+			TreeItem ppItem = dropObject.Parent.Parent.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
+			pItem.Free();
+			RenderItem(dropObject.Parent, ppItem);
+		}
+		
+	}
+
+#endregion
 
 #region USER INTERACTION
 
