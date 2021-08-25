@@ -5,6 +5,15 @@ using CSharpDataEditorDll;
 
 public class CSDataObjectTree : Tree, IDataObjectDisplay
 {
+    public delegate void EventOnSave(CSDataObjectTree tree);
+    public event EventOnSave OnSave = delegate { };
+
+    public delegate void EventOnChange(CSDataObjectTree tree);
+    public event EventOnChange OnChange = delegate { };
+
+    public IDataConverter Converter {get; private set;}
+    private string ObjectName = "";
+
 	private CSDataObjectClass DataObjectClass = null;
 	private bool Redraw = false;
 
@@ -18,11 +27,35 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		Connect("button_pressed", this, nameof(OnButtonPressed));
 	}
 
-	public void InitTree(CSDataObjectClass rootObject)
+	public void InitTree(string name, IDataConverter converter)
 	{
-		DataObjectClass = rootObject;
+        Converter = converter;
+		DataObjectClass = Converter.GetObject(name);
+        ObjectName = name;
 		Redraw = true;
 	}
+
+    public void Reload()
+    {
+        DataObjectClass = Converter.GetObject(ObjectName);
+        Redraw = true;
+    }
+
+    public bool Save()
+    {
+        if (DataObjectClass.HasChanges)
+        {
+            bool saveResult = Converter.SaveObject(ObjectName, DataObjectClass);
+            if (saveResult)
+            {
+                // Maybe we can avoid this, but do it to make sure we got a clean state
+                Reload();
+                OnSave(this);
+            }
+            return saveResult;
+        }
+        return false;
+    }
 
 	public override void _PhysicsProcess(float delta)
 	{
@@ -160,6 +193,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			TreeItem ppItem = dropObject.Parent.Parent.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
 			pItem.Free();
 			RenderItem(dropObject.Parent, ppItem);
+            OnChange(this);
 		}
 		
 	}
@@ -185,6 +219,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		{
 			CSDataObject newObject = ((CSDataObjectMemberArray)dataObject).AddNew();
 			RenderItem(newObject, treeItem);
+            OnChange(this);
 		}
 		else if (buttonTexture == Utils.LoadTextureFromFile(Constants.IMAGE_REMOVE))
 		{
@@ -194,6 +229,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			}
 			((CSDataObjectMemberArray)dataObject.Parent).Remove(dataObject.Index);
 			treeItem.Free();
+            OnChange(this);
 		}
 		else if (buttonTexture == Utils.LoadTextureFromFile(Constants.IMAGE_ERROR))
 		{
@@ -208,6 +244,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			}
 			target.SetValue(target.InitialValue);
 			ItemEdited(target);
+            OnChange(this);
 		}
 		RefreshAllVisibilityMods();
 	}
@@ -233,9 +270,12 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		{
 			target = (CSDataObjectMember)dataObject;
 		}
-		target.SetValue(newValue);
-		ItemEdited(target);
-		RefreshAllVisibilityMods();
+		if (target.SetValue(newValue))
+        {
+		    ItemEdited(target);
+		    RefreshAllVisibilityMods();
+            OnChange(this);
+        }
 	}
 
 	private void ItemEdited(CSDataObjectMember target)
@@ -261,9 +301,12 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 	{
 		TreeItem item = dataObject.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
 		int column = dataObject.GetMetadata<int>(Constants.METADATA_EDITABLE_COLUMN_NUM, 1);
-		dataObject.SetValue(newValue);
-		ItemEdited(dataObject);
-		RefreshAllVisibilityMods();
+		if (dataObject.SetValue(newValue))
+        {
+		    ItemEdited(dataObject);
+		    RefreshAllVisibilityMods();
+            OnChange(this);
+        }
 	}
 
 	private void UpdateErrorState(TreeItem item, int column, string error)
@@ -433,6 +476,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 
 		// SET LEFT COLUMN VALUE
 		CSDODisplayNameOverride displayOverride = dataObject.GetCustomAttribute<CSDODisplayNameOverride>();
+		CSDODescription description = null;
 		if (displayOverride != null)
 		{
 			CSDataObjectMember displayOverrideMember = (CSDataObjectMember)dataObject.GetObjectByKey(displayOverride.MemberName+"/");
@@ -440,6 +484,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			displayOverrideMember.SetMetadata(Constants.METADATA_DISPLAY_OVERRIDE, dataObject);
 			dataObject.SetMetadata(Constants.METADATA_DISPLAY_OVERRIDE_TARGET, displayOverrideMember);
 			dataObject.SetMetadata(Constants.METADATA_EDITABLE_COLUMN_NUM, 0);
+			description = displayOverrideMember.GetCustomAttribute<CSDODescription>();
 			SetColor(item, displayOverrideMember, 0);
 			item.SetEditable(0, true);
 			if (currentValue != null && currentValue != "")
@@ -449,7 +494,15 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		}
 		else
 		{
+			description = dataObject.GetCustomAttribute<CSDODescription>();
 			item.SetText(0, dataObject.GetName());
+		}
+
+		// TOOLTIP
+		if (description != null)
+		{
+			item.SetTooltip(0, description.Description);
+			item.SetTooltip(1, description.Description);
 		}
 
 		// SET RIGHT COLUMN VALUE

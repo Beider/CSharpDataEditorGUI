@@ -6,6 +6,10 @@ using CSharpDataEditorDll;
 
 public partial class ConfigSettingsJson
 {
+    [JsonProperty("autocollapse")]
+    [CSDODescription("If set to true tree items will automatically be collapsed when dragging to reorder")]
+    public bool AutoCollapse = true;
+
     [JsonProperty("projects")]
     public List<ConfigProjects> Projects = new List<ConfigProjects>();
 }
@@ -17,17 +21,22 @@ public partial class ConfigProjects
     [JsonProperty("name")]
     [CSDOColorRenderer(nameof(Colors.Green))]
     [CSDOVisibilityModifier]
+    [CSDODescription("The project name, used for the UI")]
     public string Name = DEFAULT_NAME;
 
     [JsonProperty("binarylocation")]
-    [CSDOColorRenderer(nameof(Colors.Red))]
+    [CSDOColorRenderer(COLOR_BINARY)]
+    [CSDODescription("The binary this project works against")]
     public string BinaryLocation = "";
 
-    [JsonProperty("scanintervalms")]
-    public int CommandScanIntervalMs = 250;
-
     [JsonProperty("commandsfolder")]
+    [CSDODescription("If you want to use external command files for this project then set the path here")]
     public string CommandFileFolder = "";
+
+    [JsonProperty("scanintervalms")]
+    [CSDODescription("How often should we check for command updates in milliseconds")]
+    [CSDOVisibilityModifierStatic(typeof(ConfigProjects), nameof(IsCommandIntervalMsVisible))]
+    public int CommandScanIntervalMs = 250;
 
     [JsonProperty("editors")]
     public List<ConfigEditors> Editors = new List<ConfigEditors>();
@@ -38,49 +47,36 @@ public partial class ConfigProjects
 public partial class ConfigEditors
 {
     [JsonProperty("name")]
+    [CSDOColorRenderer(nameof(Colors.BlueViolet))]
     [CSDOVisibilityModifier]
+    [CSDODescription("The name of this editor, used for UI")]
     public string Name = DEFAULT_NAME;
 
     // Used for sending commands
     [JsonProperty("commandkey")]
-    [CSDOListRendererStatic(typeof(ConfigEditors), nameof(GetStaticList))]
+    [CSDODescription("The command key for this editor, used for external commands through command files")]
     public string CommandKey = "";
 
-    [JsonProperty("datareader")]
-    [CSDOListRendererStatic(typeof(ConfigEditors), nameof(GetStaticList))]
-    public string DataReader = "";
+    [JsonProperty("dataconverter")]
+    [CSDOListRendererStatic(typeof(ConfigEditors), nameof(GetDataConverterList), nameof(GetDataConverterColor))]
+    [CSDODescription("The data converter used for this editor")]
+    public string DataConverter = DATA_CONVERTER_DEFAULT_NAME;
 
     [JsonProperty("datareaderparam")]
     [CSDOVisibilityModifierStatic(typeof(ConfigEditors), nameof(IsDataReaderParamVisible))]
-    public string DataReaderParam = "";
+    [CSDODescription("The parameter for this editor, most likely the folder where to find the files. Depends on converter.")]
+    public string DataConverterParam = "";
 
     [JsonProperty("dataType")]
-    [CSDOListRendererEnum(typeof(DataTypes), nameof(Colors.LightBlue))]
+    [CSDOListRendererStatic(typeof(ConfigEditors), nameof(GetDataTypeList), nameof(GetDataTypeColor))]
+    [CSDODescription("The type that the data converter should convert the data into")]
     public string DataType = "";
 
     [JsonProperty("autosave")]
+    [CSDODescription("If set to true changes will be automatically saved when you switch file manually or an external command is recieved")]
     public bool AutoSave = false;
 
     [JsonProperty("autofront")]
+    [CSDODescription("If set to true this will be brought to front when an external command is recieved")]
     public bool AutoBringToFront = false;
-
-    public enum DataTypes
-    {
-        TEST, TEST2, HELLO
-    }
-
-    public static string[] GetStaticList(CSDataObject dataObject)
-    {
-        List<string> myList = new List<string>();
-        myList.Add("- Select Data Reader -");
-        myList.Add("A value2");
-        myList.Add("A second value");
-        return myList.ToArray();
-    }
-
-    public static bool IsDataReaderParamVisible(CSDataObject dataObject)
-    {
-        CSDataObjectMember member = (CSDataObjectMember) ((CSDataObjectClass) dataObject.Parent).FindMemberByName(nameof(DataReader));
-        return member.CurrentValue != "- Select Data Reader -";
-    }
 }

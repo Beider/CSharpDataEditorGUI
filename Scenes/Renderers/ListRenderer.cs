@@ -79,7 +79,6 @@ public class ListRenderer : ItemList, IRenderer
 			if (GetSelectedItems().Length > 0)
 			{
 				string value = GetItemText(GetSelectedItems()[0]);
-				DataObject.SetValue(value);
 				Display.UpdateDataObject(DataObject, value);
 			}
 			QueueFree();

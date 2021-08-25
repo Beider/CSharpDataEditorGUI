@@ -2,6 +2,9 @@ using Godot;
 using System;
 using System.Reflection;
 using System.Collections.Generic;
+using System.Globalization;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 public static class Utils
 {
@@ -47,12 +50,45 @@ public static class Utils
     }
 
     private static void LoadColors()
+    {
+        Type colorType = typeof(Colors);
+        PropertyInfo[] props = colorType.GetProperties(BindingFlags.Static | BindingFlags.Public);
+        foreach (PropertyInfo info in props)
         {
-            Type colorType = typeof(Colors);
-            PropertyInfo[] props = colorType.GetProperties(BindingFlags.Static | BindingFlags.Public);
-            foreach (PropertyInfo info in props)
-            {
-                ColorLookup.Add(info.Name.ToLower(), (Color)info.GetValue(null));
-            }
+            ColorLookup.Add(info.Name.ToLower(), (Color)info.GetValue(null));
         }
+    }
+
+    public static T ReadJsonFile<T>(string fullPath)
+    {
+        object createdObject = null;
+        if (System.IO.File.Exists(fullPath))
+        {
+            string json = System.IO.File.ReadAllText(fullPath);
+            createdObject = FromJson(json, typeof(T));
+        }
+
+        if (createdObject == null)
+        {
+            createdObject = Activator.CreateInstance(typeof(T));
+        }
+        
+        return (T)createdObject;
+    }
+
+    public static object FromJson(string json, Type type) => JsonConvert.DeserializeObject(json, type, Settings);
+
+    /// <summary>
+    /// Settings for JSON serializer
+    /// </summary>
+    public static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
+    {
+        MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
+        Formatting = Formatting.Indented,
+        DateParseHandling = DateParseHandling.None,
+        ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+        Converters = {
+            new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
+        },
+    };
 }

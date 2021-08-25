@@ -5,32 +5,39 @@ using CSharpDataEditorDll;
 
 public class Main : Control
 {
-	private CSDataObjectTree DisplayTree;
-
-	private CSDataObjectClass DataObjectClass;
+	private CSDataObjectTree Settings;
 
 	private NewtonsoftJsonConverter Converter;
 
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
-		DisplayTree = FindNode("CSDataObjectTree") as CSDataObjectTree;
-		Reload();
+		Settings = FindNode("CSDataObjectTree") as CSDataObjectTree;
+		Button btnShow = FindNode("BtnShow") as Button;
+		btnShow.Connect("pressed", UIManager.Instance, nameof(UIManager.ToggleSideBarVisible));
+		UIManager.Instance.CollapsedMenu = FindNode("CollapsedMenu") as Control;
+		UIManager.Instance.CollapsedMenu.Visible = false;
+		UIManager.Instance.SplitContainer = FindNode("SplitContainer") as HSplitContainer;
+		UIManager.Instance.DataContainer = FindNode("DataContainer") as Control;
+		UIManager.Instance.SetSaveButtons((Button)FindNode("BtnSave"),(Button)FindNode("BtnSaveCol"));
 	}
 
 	private void Reload()
 	{
 		GD.Print("Reloading");
-		Converter = new NewtonsoftJsonConverter();
+		NewtonsoftJsonConverter Converter = new NewtonsoftJsonConverter();
 		Converter.Init("E:\\Coding\\Godot\\CSharpDataEditor\\TestData", nameof(ConfigSettingsJson), Assembly.GetExecutingAssembly().Location);
-		DataObjectClass = Converter.GetObject("test");
-		DisplayTree.InitTree(DataObjectClass);
+		Settings.InitTree("test", Converter);
 	}
 
 	private void OnSavePressed()
 	{
-		Converter.SaveObject("test", DataObjectClass);
-		Reload();
+		UIManager.Instance.SaveAll();
+	}
+
+	private void OnShowSettingsPressed()
+	{
+		UIManager.Instance.ShowSettings();
 	}
 
 }

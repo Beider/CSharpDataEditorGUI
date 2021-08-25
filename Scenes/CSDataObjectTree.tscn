@@ -3,9 +3,10 @@
 [ext_resource path="res://Scenes/CSDataObjectTree.cs" type="Script" id=1]
 
 [node name="CSDataObjectTree" type="Tree"]
-margin_left = 209.0
-margin_right = 1024.0
-margin_bottom = 600.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
 columns = 2
 hide_root = true
 script = ExtResource( 1 )
