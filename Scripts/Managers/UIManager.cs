@@ -6,8 +6,18 @@ using CSharpDataEditorDll;
 
 public class UIManager : Node
 {
-    public const string DATA_OBJECT_TREE_SCENE_PATH = "res://Scenes/CSDataObjectTree.tscn";
+    public const string DATA_OBJECT_EDITOR_PATH = "res://Scenes/Interface/ProjectEditor.tscn";
     public static UIManager Instance;
+
+    public delegate void EventOnEditorDirty(bool dirty);
+    public event EventOnEditorDirty OnEditorDirty = delegate { };
+
+    public delegate void EventEditorShown(ConfigProjects project, ConfigEditors editor);
+    public event EventEditorShown OnEditorShown = delegate { };
+    public delegate void EventOnEditorSave(ConfigProjects project, ConfigEditors editor);
+    public event EventOnEditorSave OnEditorSave = delegate { };
+    public delegate void EventOnEditorChange(ConfigProjects project, ConfigEditors editor);
+    public event EventOnEditorChange OnEditorChanged = delegate { };
 
     private bool SideBarVisible = true;
     public HSplitContainer SplitContainer = null;
@@ -17,8 +27,10 @@ public class UIManager : Node
     public Button SaveButton;
     public Button SaveButtonCol;
 
-    public CSDataObjectTree SettingsEditor = null;
-    public List<CSDataObjectTree> Editors = new List<CSDataObjectTree>();
+    public bool IsAnythingChanged {get; private set;} = false;
+
+    public IProjectEditor SettingsEditor = null;
+    public List<IProjectEditor> Editors = new List<IProjectEditor>();
 
     // Called when the node enters the scene tree for the first time.
     public override void _Ready()
@@ -34,18 +46,24 @@ public class UIManager : Node
         SplitContainer.Collapsed = !SideBarVisible;
     }
 
-    public void ShowEditor(CSDataObjectTree editor)
+    public void ShowEditor(IProjectEditor editor)
     {
-        editor.Visible = true;
+        // TODO: Autosave old editor if needed
+        foreach (IProjectEditor pEditor in Editors)
+        {
+            Control editorControl = (Control)pEditor;
+            editorControl.Visible = pEditor == editor;
+        }
     }
 
     public void SaveAll()
     {
-        foreach (CSDataObjectTree editor in Editors)
+        foreach (IProjectEditor editor in Editors)
         {
-            if (editor.Save() && editor == SettingsEditor)
+            // Do not save settings with save all as it causes reload
+            if (editor != SettingsEditor)
             {
-                Settings.ReloadConfiguration();
+                editor.Save();
             }
         }
         SetSaveButtonsState(true);
@@ -60,6 +78,7 @@ public class UIManager : Node
 
     private void SetSaveButtonsState(bool disabled)
     {
+        IsAnythingChanged = !disabled;
         SaveButton.Disabled = disabled;
         SaveButtonCol.Disabled = disabled;
     }
@@ -68,30 +87,66 @@ public class UIManager : Node
     {
         if (SettingsEditor == null)
         {
-            SettingsEditor = NewDataObjectTree();
-            IDataConverter converter = new NewtonsoftJsonConverter();
-            string location = Assembly.GetExecutingAssembly().Location;
-            converter.Init(Settings.SettingsLocation(), nameof(ConfigSettingsJson), location);
-            SettingsEditor.InitTree(Settings.SETTINGS_FILE_NAME, converter);
+            ConfigProjects settings = Constants.GetSettingsProject();
+            SettingsEditor = NewEditor(settings, 0);
+            OnEditorShown(settings, settings.Editors[0]);
         }
         ShowEditor(SettingsEditor);
     }
 
-    protected CSDataObjectTree NewDataObjectTree()
+    public static void ShowEditor(ConfigProjects project, ConfigEditors editor)
     {
-        PackedScene scene = ResourceLoader.Load(DATA_OBJECT_TREE_SCENE_PATH) as PackedScene;
-        Node instance = scene.Instance();
-        DataContainer.AddChild(instance);
-        CSDataObjectTree editor = (CSDataObjectTree)instance;
-        editor.OnChange += OnEditorChanged;
-        Editors.Add(editor);
-
-        return editor;
+        foreach (IProjectEditor pEditor in Instance.Editors)
+        {
+            if (pEditor.IsEditorFor(project, editor))
+            {
+                Instance.ShowEditor(pEditor);
+                Instance.OnEditorShown(project, editor);
+                return;
+            }
+        }
+        // Create editor wrapping object
+        IProjectEditor newEditor = Instance.NewEditor(project, project.Editors.IndexOf(editor));
+        Instance.ShowEditor(newEditor);
+        Instance.OnEditorShown(project, editor);
     }
 
-    protected void OnEditorChanged(CSDataObjectTree editor)
+    protected IProjectEditor NewEditor(ConfigProjects project, int editorIndex)
     {
-        SetSaveButtonsState(false);
+        if (project.Editors == null || project.Editors.Count <= editorIndex)
+        {
+            return null;
+        }
+        
+        PackedScene scene = ResourceLoader.Load(DATA_OBJECT_EDITOR_PATH) as PackedScene;
+        Node instance = scene.Instance();
+        DataContainer.AddChild(instance);
+        IProjectEditor projectEditor = (IProjectEditor)instance;
+        Editors.Add(projectEditor);
+        projectEditor.Init(project, project.Editors[editorIndex]);
+
+        return projectEditor;
+    }
+
+    public static void OnProjectChanged(ConfigProjects project, ConfigEditors editor)
+    {
+        if (project == Constants.GetSettingsProject())
+        {
+            return;
+        }
+        Instance.SetSaveButtonsState(false);
+        Instance.OnEditorDirty(true);
+        Instance.OnEditorChanged(project, editor);
+    }
+
+    public static void OnProjectSaved(ConfigProjects project, ConfigEditors editor)
+    {
+        if (project == Constants.GetSettingsProject())
+        {
+            Settings.ReloadConfiguration();
+            return;
+        }
+        Instance.OnEditorSave(project, editor);
     }
 
     public static void LogError(string error)

@@ -1,0 +1,180 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://Assets/Images/pencil.png" type="Texture" id=1]
+[ext_resource path="res://Assets/Images/save.png" type="Texture" id=2]
+[ext_resource path="res://Assets/Images/full-folder.png" type="Texture" id=3]
+[ext_resource path="res://Scenes/Interface/ProjectEditor.cs" type="Script" id=4]
+[ext_resource path="res://Scenes/CSDataObjectTree.tscn" type="PackedScene" id=5]
+[ext_resource path="res://Scenes/Interface/NewObjectDialog.tscn" type="PackedScene" id=6]
+
+[sub_resource type="InputEventAction" id=1]
+action = "save"
+pressed = true
+
+[sub_resource type="ShortCut" id=2]
+shortcut = SubResource( 1 )
+
+[node name="ProjectEditor" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="GridContainer" type="GridContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+custom_constants/vseparation = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Toolbar" type="Panel" parent="GridContainer"]
+margin_right = 1024.0
+margin_bottom = 38.0
+rect_min_size = Vector2( 0, 38 )
+size_flags_horizontal = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="CenterContainer" type="CenterContainer" parent="GridContainer/Toolbar"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="NameLabel" type="RichTextLabel" parent="GridContainer/Toolbar/CenterContainer"]
+margin_left = 312.0
+margin_top = 11.0
+margin_right = 712.0
+margin_bottom = 26.0
+rect_min_size = Vector2( 400, 15 )
+mouse_filter = 2
+bbcode_enabled = true
+bbcode_text = "[center][color=#ff00ff00]C# Editor[/color] - [color=MediumPurple]Settings[/color][/center]"
+text = "C# Editor - Settings"
+scroll_active = false
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="GridContainer" type="GridContainer" parent="GridContainer/Toolbar"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 10.0
+margin_right = -869.0
+columns = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="BtnOpen" type="MenuButton" parent="GridContainer/Toolbar/GridContainer"]
+margin_right = 44.0
+margin_bottom = 38.0
+hint_tooltip = "Open"
+focus_mode = 2
+shortcut_in_tooltip = false
+icon = ExtResource( 3 )
+flat = false
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="BtnNew" type="Button" parent="GridContainer/Toolbar/GridContainer"]
+anchor_top = 0.0263158
+anchor_bottom = 0.0263158
+margin_left = 48.0
+margin_right = 92.0
+margin_bottom = 38.0
+hint_tooltip = "New"
+shortcut_in_tooltip = false
+icon = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="BtnSave" type="Button" parent="GridContainer/Toolbar/GridContainer"]
+margin_left = 96.0
+margin_right = 140.0
+margin_bottom = 38.0
+hint_tooltip = "Save (Ctrl+S)"
+shortcut_in_tooltip = false
+shortcut = SubResource( 2 )
+icon = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="CSDataObjectTree" parent="GridContainer" instance=ExtResource( 5 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_top = 40.0
+margin_right = 1024.0
+margin_bottom = 600.0
+
+[node name="ConfirmSave" type="ConfirmationDialog" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -145.0
+margin_top = -54.5
+margin_right = 145.0
+margin_bottom = 54.5
+popup_exclusive = true
+window_title = "Changes will be lost!"
+dialog_text = "You have unsaved changes, these will be lost if settings are updated.
+Are you sure you wish to discard all changes?"
+dialog_autowrap = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ConfirmOpen" type="ConfirmationDialog" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -145.0
+margin_top = -54.5
+margin_right = 145.0
+margin_bottom = 54.5
+popup_exclusive = true
+window_title = "Changes will be lost!"
+dialog_text = "You have unsaved changes, these will be lost if you open another object.
+Do you wish to continue opening anyway?"
+dialog_autowrap = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="ConfirmNew" type="ConfirmationDialog" parent="."]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -145.0
+margin_top = -54.5
+margin_right = 145.0
+margin_bottom = 54.5
+popup_exclusive = true
+window_title = "Changes will be lost!"
+dialog_text = "You have unsaved changes, these will be lost if you create a new object.
+Do you wish to continue anyway?"
+dialog_autowrap = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="NewObjectDialog" parent="." instance=ExtResource( 6 )]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 58.0
+margin_top = 42.0
+margin_right = 272.0
+margin_bottom = 140.0

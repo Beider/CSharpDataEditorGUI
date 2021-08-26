@@ -96,8 +96,7 @@ public partial class ConfigEditors
                 returnList.Add(type.FullName);
             }
         }
-        return returnList.ToArray();
-        
+        return returnList.ToArray(); 
     }
 
     public static string GetDataTypeColor(string value, CSDataObject dataObject)
@@ -162,14 +161,24 @@ public partial class ConfigEditors
             parent = parent.Parent;
         }
 
-        if (binaryLoc == null || binaryLoc.CurrentValue == null || binaryLoc.CurrentValue == "" ||
-            !System.IO.File.Exists(binaryLoc.CurrentValue))
+        if (binaryLoc != null)
+        {
+            return LoadBinary(binaryLoc.CurrentValue);
+        }
+
+        return null;
+    }
+
+    private static Assembly LoadBinary(string assemblyPath)
+    {
+        if (assemblyPath == null || assemblyPath == "" || !System.IO.File.Exists(assemblyPath))
         {
             return null;
         }
+
         try
         {
-            return Assembly.Load(System.IO.File.ReadAllBytes(binaryLoc.CurrentValue));
+            return Assembly.Load(System.IO.File.ReadAllBytes(assemblyPath));
         }
         catch (Exception)
         {
@@ -216,7 +225,7 @@ public partial class ConfigEditors
         {
             if (typeof(IDataConverter).IsAssignableFrom(type) && !type.IsInterface)
             {
-                returnList.Add(type.Name);
+                returnList.Add(type.FullName);
             }
         }
 
@@ -227,5 +236,45 @@ public partial class ConfigEditors
     {
         CSDataObjectMember member = (CSDataObjectMember) ((CSDataObjectClass) dataObject.Parent).FindMemberByName(nameof(DataConverter));
         return member.CurrentValue != DATA_CONVERTER_DEFAULT_NAME;
+    }
+
+    public IDataConverter GetDataConverter(ConfigProjects project)
+    {
+        Type converterType = GetDataConverterType(project.BinaryLocation);        
+        if (converterType != null)
+        {
+            return Activator.CreateInstance(converterType) as IDataConverter;
+        }
+
+        return null;
+    }
+
+    private Type GetDataConverterType(string binaryPath)
+    {
+        Type converterType = null;
+        // Check own assembly
+        converterType = Assembly.GetExecutingAssembly().GetType(DataConverter);
+        if (converterType != null)
+        {
+            return converterType;
+        }
+        foreach (var assemblyName in Assembly.GetExecutingAssembly().GetReferencedAssemblies())
+        {
+            Assembly assembly = Assembly.Load(assemblyName);
+            converterType = assembly.GetType(DataConverter);
+            if (converterType != null)
+            {
+                return converterType;
+            }
+        }
+
+        // Check binary
+        Assembly binary = LoadBinary(binaryPath);
+        if (binary != null)
+        {
+            converterType = binary.GetType(DataConverter);
+        }
+
+        return converterType;
     }
 }

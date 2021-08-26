@@ -19,7 +19,7 @@ public class Main : Control
 		UIManager.Instance.CollapsedMenu.Visible = false;
 		UIManager.Instance.SplitContainer = FindNode("SplitContainer") as HSplitContainer;
 		UIManager.Instance.DataContainer = FindNode("DataContainer") as Control;
-		UIManager.Instance.SetSaveButtons((Button)FindNode("BtnSave"),(Button)FindNode("BtnSaveCol"));
+		UIManager.Instance.SetSaveButtons((Button)FindNode("BtnSaveAll"),(Button)FindNode("BtnSaveCol"));
 	}
 
 	private void Reload()

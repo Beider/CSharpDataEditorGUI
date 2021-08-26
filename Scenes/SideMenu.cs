@@ -7,6 +7,8 @@ public class SideMenu : GridContainer
     private PackedScene ProjectButtonScene = null;
     private Control ControlPanel = null;
 
+    private GridContainer EditorParent;
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
@@ -16,6 +18,7 @@ public class SideMenu : GridContainer
         Visible = true;
 
         ControlPanel = FindNode("ControlPanel") as Control;
+        EditorParent = FindNode("EditorParent") as GridContainer;
 
         ProjectButtonScene = ResourceLoader.Load(PROJECT_BUTTON_PATH) as PackedScene;
 
@@ -28,20 +31,23 @@ public class SideMenu : GridContainer
         ClearChildren();
         foreach (ConfigProjects project in Settings.Instance.Configuration.Projects)
         {
-            ProjectButton btn = ProjectButtonScene.Instance() as ProjectButton;
-            btn.InitButton(project);
-            AddChild(btn);
+            if (project.IsValid() && project.Active && project.Editors != null)
+            {
+                foreach (ConfigEditors editor in project.Editors)
+                {
+                    ProjectButton btn = ProjectButtonScene.Instance() as ProjectButton;
+                    btn.InitButton(project, editor);
+                    EditorParent.AddChild(btn);
+                }
+            }
         }
     }
 
     private void ClearChildren()
     {
-        foreach (Node child in GetChildren())
+        foreach (Node child in EditorParent.GetChildren())
         {
-            if (child != ControlPanel)
-            {
-                child.QueueFree();
-            }
+            child.QueueFree();
         }
     }
 

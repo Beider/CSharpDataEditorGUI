@@ -19,7 +19,7 @@ public partial class ConfigSettingsJson
 public partial class ConfigProjects
 {
     [JsonProperty("name")]
-    [CSDOColorRenderer(nameof(Colors.Green))]
+    [CSDOColorRenderer(Constants.COLOR_PROJECT)]
     [CSDOVisibilityModifier]
     [CSDODescription("The project name, used for the UI")]
     public string Name = DEFAULT_NAME;
@@ -38,6 +38,10 @@ public partial class ConfigProjects
     [CSDOVisibilityModifierStatic(typeof(ConfigProjects), nameof(IsCommandIntervalMsVisible))]
     public int CommandScanIntervalMs = 250;
 
+    [JsonProperty("active")]
+    [CSDODescription("If set to false editor will not do anything with this project")]
+    public bool Active = true;
+
     [JsonProperty("editors")]
     public List<ConfigEditors> Editors = new List<ConfigEditors>();
 }
@@ -47,7 +51,7 @@ public partial class ConfigProjects
 public partial class ConfigEditors
 {
     [JsonProperty("name")]
-    [CSDOColorRenderer(nameof(Colors.BlueViolet))]
+    [CSDOColorRenderer(Constants.COLOR_EDITOR)]
     [CSDOVisibilityModifier]
     [CSDODescription("The name of this editor, used for UI")]
     public string Name = DEFAULT_NAME;
@@ -79,4 +83,12 @@ public partial class ConfigEditors
     [JsonProperty("autofront")]
     [CSDODescription("If set to true this will be brought to front when an external command is recieved")]
     public bool AutoBringToFront = false;
+
+    [JsonProperty("allownew")]
+    [CSDODescription("Decides if we allow you to create new objects in this editor")]
+    public bool AllowCreateNew = true;
+
+    [JsonProperty("allowopen")]
+    [CSDODescription("Decides if we allow you to open objects manually in this editor, commands still work even if this is false")]
+    public bool AllowOpen = true;
 }

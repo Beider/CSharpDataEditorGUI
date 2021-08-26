@@ -5,10 +5,9 @@ using CSharpDataEditorDll;
 
 public class CSDataObjectTree : Tree, IDataObjectDisplay
 {
-    public delegate void EventOnSave(CSDataObjectTree tree);
+    public delegate void EventOnSave();
     public event EventOnSave OnSave = delegate { };
-
-    public delegate void EventOnChange(CSDataObjectTree tree);
+    public delegate void EventOnChange();
     public event EventOnChange OnChange = delegate { };
 
     public IDataConverter Converter {get; private set;}
@@ -43,6 +42,10 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 
     public bool Save()
     {
+        if (DataObjectClass == null)
+        {
+            return false;
+        }
         if (DataObjectClass.HasChanges)
         {
             bool saveResult = Converter.SaveObject(ObjectName, DataObjectClass);
@@ -50,7 +53,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
             {
                 // Maybe we can avoid this, but do it to make sure we got a clean state
                 Reload();
-                OnSave(this);
+                OnSave();
             }
             return saveResult;
         }
@@ -193,7 +196,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			TreeItem ppItem = dropObject.Parent.Parent.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
 			pItem.Free();
 			RenderItem(dropObject.Parent, ppItem);
-            OnChange(this);
+            OnChange();
 		}
 		
 	}
@@ -219,7 +222,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		{
 			CSDataObject newObject = ((CSDataObjectMemberArray)dataObject).AddNew();
 			RenderItem(newObject, treeItem);
-            OnChange(this);
+            OnChange();
 		}
 		else if (buttonTexture == Utils.LoadTextureFromFile(Constants.IMAGE_REMOVE))
 		{
@@ -229,7 +232,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			}
 			((CSDataObjectMemberArray)dataObject.Parent).Remove(dataObject.Index);
 			treeItem.Free();
-            OnChange(this);
+            OnChange();
 		}
 		else if (buttonTexture == Utils.LoadTextureFromFile(Constants.IMAGE_ERROR))
 		{
@@ -244,7 +247,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			}
 			target.SetValue(target.InitialValue);
 			ItemEdited(target);
-            OnChange(this);
+            OnChange();
 		}
 		RefreshAllVisibilityMods();
 	}
@@ -274,7 +277,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
         {
 		    ItemEdited(target);
 		    RefreshAllVisibilityMods();
-            OnChange(this);
+            OnChange();
         }
 	}
 
@@ -305,7 +308,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
         {
 		    ItemEdited(dataObject);
 		    RefreshAllVisibilityMods();
-            OnChange(this);
+            OnChange();
         }
 	}
 

@@ -22,7 +22,7 @@ pressed = true
 shortcut = SubResource( 3 )
 
 [sub_resource type="InputEventAction" id=5]
-action = "save"
+action = "save_all"
 pressed = true
 
 [sub_resource type="ShortCut" id=6]
@@ -101,7 +101,7 @@ __meta__ = {
 margin_top = 84.0
 margin_right = 44.0
 margin_bottom = 122.0
-hint_tooltip = "Save (Ctrl+S)"
+hint_tooltip = "Save All (Ctrl+Alt+S)"
 shortcut_in_tooltip = false
 shortcut = SubResource( 6 )
 icon = ExtResource( 5 )
@@ -112,7 +112,7 @@ __meta__ = {
 [node name="SideMenu" type="GridContainer" parent="Background/SplitContainer"]
 margin_right = 200.0
 margin_bottom = 600.0
-custom_constants/vseparation = 1
+custom_constants/vseparation = 2
 script = ExtResource( 8 )
 __meta__ = {
 "_edit_lock_": true
@@ -148,19 +148,33 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="BtnSave" type="Button" parent="Background/SplitContainer/SideMenu/ControlPanel"]
+[node name="BtnSaveAll" type="Button" parent="Background/SplitContainer/SideMenu/ControlPanel"]
 anchor_left = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_left = -90.0
 margin_right = -46.0
-hint_tooltip = "Save (Ctrl+S)"
+hint_tooltip = "Save All (Ctrl+Alt+S)"
 shortcut_in_tooltip = false
 shortcut = SubResource( 6 )
 icon = ExtResource( 5 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Background/SplitContainer/SideMenu"]
+margin_top = 40.0
+margin_right = 200.0
+margin_bottom = 600.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="EditorParent" type="GridContainer" parent="Background/SplitContainer/SideMenu/ScrollContainer"]
+margin_right = 200.0
+margin_bottom = 560.0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+custom_constants/vseparation = 2
 
 [node name="DataContainer" type="Control" parent="Background/SplitContainer"]
 margin_left = 200.0
@@ -175,4 +189,4 @@ __meta__ = {
 [connection signal="pressed" from="Background/SplitContainer/CollapsedMenu/BtnSettingsCol" to="." method="OnShowSettingsPressed"]
 [connection signal="pressed" from="Background/SplitContainer/CollapsedMenu/BtnSaveCol" to="." method="OnSavePressed"]
 [connection signal="pressed" from="Background/SplitContainer/SideMenu/ControlPanel/BtnSettings" to="." method="OnShowSettingsPressed"]
-[connection signal="pressed" from="Background/SplitContainer/SideMenu/ControlPanel/BtnSave" to="." method="OnSavePressed"]
+[connection signal="pressed" from="Background/SplitContainer/SideMenu/ControlPanel/BtnSaveAll" to="." method="OnSavePressed"]

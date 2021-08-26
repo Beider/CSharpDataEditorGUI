@@ -1,0 +1,68 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://Scenes/Interface/NewObjectDialog.cs" type="Script" id=1]
+
+[node name="NewObjectDialog" type="PopupDialog"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -454.699
+margin_top = -258.496
+margin_right = -240.699
+margin_bottom = -160.496
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="GridContainer" type="GridContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 20.0
+margin_top = 20.0
+margin_right = -20.0
+margin_bottom = -20.0
+columns = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="GridContainer"]
+margin_top = 5.0
+margin_right = 38.0
+margin_bottom = 19.0
+text = "Name"
+
+[node name="LineEdit" type="LineEdit" parent="GridContainer"]
+margin_left = 42.0
+margin_right = 174.0
+margin_bottom = 24.0
+size_flags_horizontal = 3
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="BtnCreate" type="Button" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+margin_left = 20.0
+margin_top = -40.0
+margin_right = 73.0
+margin_bottom = -20.0
+text = "Create"
+
+[node name="BtnCancel" type="Button" parent="."]
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = -73.0
+margin_top = -40.0
+margin_right = -20.0
+margin_bottom = -20.0
+text = "Cancel"
+
+[connection signal="about_to_show" from="." to="." method="OnAboutToShow"]
+[connection signal="pressed" from="BtnCreate" to="." method="OnCreatePressed"]
+[connection signal="pressed" from="BtnCancel" to="." method="OnCancelPressed"]

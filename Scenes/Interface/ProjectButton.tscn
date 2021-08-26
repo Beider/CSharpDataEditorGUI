@@ -17,24 +17,52 @@ __meta__ = {
 anchor_right = 1.0
 anchor_bottom = 1.0
 rect_min_size = Vector2( 0, 40 )
+toggle_mode = true
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="CenterContainer" type="CenterContainer" parent="Button"]
+[node name="GridContainer" type="GridContainer" parent="Button"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-mouse_filter = 1
+margin_left = 5.0
+margin_top = 5.0
+margin_right = -5.0
+margin_bottom = -5.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="Name" type="Label" parent="Button/CenterContainer"]
-margin_left = 41.0
-margin_top = 13.0
-margin_right = 159.0
-margin_bottom = 27.0
+[node name="ProjectName" type="Label" parent="Button/GridContainer"]
+margin_right = 190.0
+margin_bottom = 14.0
 mouse_filter = 1
 size_flags_horizontal = 3
 custom_colors/font_color = Color( 1, 1, 1, 1 )
-text = "Project name here"
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_constants/shadow_as_outline = 1
+text = "Rogue Towers"
+
+[node name="EditorName" type="Label" parent="Button/GridContainer"]
+margin_top = 18.0
+margin_right = 190.0
+margin_bottom = 32.0
+mouse_filter = 1
+size_flags_horizontal = 3
+custom_colors/font_color = Color( 1, 1, 1, 1 )
+custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
+custom_constants/shadow_as_outline = 1
+text = "Level Scripts"
+align = 2
+
+[node name="ChangeNotification" type="ColorRect" parent="Button"]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -11.0
+margin_top = 4.0
+margin_right = -4.0
+margin_bottom = 11.0
+color = Color( 1, 0, 0, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
