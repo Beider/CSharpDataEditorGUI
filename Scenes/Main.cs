@@ -20,6 +20,9 @@ public class Main : Control
 		UIManager.Instance.SplitContainer = FindNode("SplitContainer") as HSplitContainer;
 		UIManager.Instance.DataContainer = FindNode("DataContainer") as Control;
 		UIManager.Instance.SetSaveButtons((Button)FindNode("BtnSaveAll"),(Button)FindNode("BtnSaveCol"));
+
+		// Because renaming the project breaks everything we do this
+		OS.SetWindowTitle("C# Data Editor");
 	}
 
 	private void Reload()

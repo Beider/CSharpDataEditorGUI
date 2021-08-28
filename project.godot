@@ -12,7 +12,8 @@ config_version=4
 
 config/name="CSharpDataEditorGUI"
 run/main_scene="res://Scenes/Main.tscn"
-config/icon="res://icon.png"
+config/icon="res://Assets/Images/database.png"
+config/windows_native_icon="res://Assets/Images/database.ico"
 
 [autoload]
 

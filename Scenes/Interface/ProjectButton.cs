@@ -91,10 +91,6 @@ public class ProjectButton : Control
 			
 			IDataConverter converter = new NewtonsoftJsonConverter();
 			converter.Init(editor.DataConverterParam, editor.DataType, project.BinaryLocation);
-			foreach (string objectName in converter.GetValidObjectNames())
-			{
-				GD.Print($"{editor.Name} object: {objectName}");
-			}
 		}
 		UpdateUI();
 	}
