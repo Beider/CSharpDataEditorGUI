@@ -89,7 +89,7 @@ public partial class ConfigEditors
         }
 
         List<string> returnList = new List<string>();
-        foreach (Type type in assembly.GetTypes())
+        foreach (Type type in assembly.GetTypesSafe())
         {
             if (type.GetCustomAttribute<CSDODataClass>() != null)
             {
@@ -111,19 +111,27 @@ public partial class ConfigEditors
 
     public static string[] GetDataConverterList(CSDataObject dataObject)
     {
-        LoadInternalDataConverters();
-
-        List<string> myList = new List<string>();
-        myList.AddRange(InternalDataConverters);
-
-        Assembly binary = LoadBinary(dataObject);
-        if (binary != null)
+        try
         {
-            myList.AddRange(ExtractDataConverters(binary));
-        }
+            LoadInternalDataConverters();
 
-        // Extract data converters from the binary
-        return myList.ToArray();
+            List<string> myList = new List<string>();
+            myList.AddRange(InternalDataConverters);
+
+            Assembly binary = LoadBinary(dataObject);
+            if (binary != null)
+            {
+                myList.AddRange(ExtractDataConverters(binary));
+            }
+
+            // Extract data converters from the binary
+            return myList.ToArray();
+        } 
+        catch (Exception ex)
+        {
+            System.Console.Error.Write(ex);
+            return new string[] { "Error was here" };
+        }
     }
 
     public static string GetDataConverterColor(string value, CSDataObject dataObject)
@@ -190,15 +198,22 @@ public partial class ConfigEditors
     {
         if (InternalDataConverters.Count == 0)
         {
-            List<Assembly> assemblies = new List<Assembly>();
-            assemblies.Add(Assembly.GetExecutingAssembly());
-            foreach (var assemblyName in Assembly.GetExecutingAssembly().GetReferencedAssemblies())
+            try
             {
-                Assembly assembly = Assembly.Load(assemblyName);
-                assemblies.Add(assembly);
+                List<Assembly> assemblies = new List<Assembly>();
+                assemblies.Add(Assembly.GetExecutingAssembly());
+                foreach (var assemblyName in Assembly.GetExecutingAssembly().GetReferencedAssemblies())
+                {
+                    Assembly assembly = Assembly.Load(assemblyName);
+                    assemblies.Add(assembly);
+                }
+                InternalDataConverters.Add(DATA_CONVERTER_DEFAULT_NAME);
+                InternalDataConverters.AddRange(ExtractDataConverters(assemblies));
+            } 
+            catch (Exception ex)
+            {
+                System.Console.Error.Write(ex);
             }
-            InternalDataConverters.Add(DATA_CONVERTER_DEFAULT_NAME);
-            InternalDataConverters.AddRange(ExtractDataConverters(assemblies));
         }
     }
 
@@ -221,11 +236,19 @@ public partial class ConfigEditors
     private static List<string> ExtractDataConverters(Assembly assembly)
     {
         List<string> returnList = new List<string>();
-        foreach (Type type in assembly.GetTypes())
+
+        foreach (Type type in assembly.GetTypesSafe())
         {
-            if (typeof(IDataConverter).IsAssignableFrom(type) && !type.IsInterface)
+            try
             {
-                returnList.Add(type.FullName);
+                if (typeof(IDataConverter).IsAssignableFrom(type) && !type.IsInterface)
+                {
+                    returnList.Add(type.FullName);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Console.Write(ex);
             }
         }
 

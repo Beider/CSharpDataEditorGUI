@@ -41,7 +41,23 @@ public class Settings : Node
             path += "/";
         }
         path += SETTINGS_FILE_NAME + ".json";
-        Instance.Configuration = Utils.ReadJsonFile<ConfigSettingsJson>(path);
+        if (System.IO.File.Exists(path))
+        {
+            Instance.Configuration = Utils.ReadJsonFile<ConfigSettingsJson>(path);
+        }
+        else
+        {
+            Instance.Configuration = new ConfigSettingsJson();
+            string json = Utils.ToJson(Instance.Configuration);
+            try
+            {
+                System.IO.File.WriteAllText(path, json);
+            }
+            catch (Exception ex)
+            {
+                GD.Print(ex.Message);
+            }
+        }
         Instance.OnSettingsRefresh();
     }
 
@@ -61,7 +77,7 @@ public class Settings : Node
 
     public static string SettingsLocation()
     {
-        return System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        return Utils.GetBinaryFolder();
     }
 
 }

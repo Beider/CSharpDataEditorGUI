@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.IO;
 using System.Reflection;
 using System.Collections.Generic;
 using System.Globalization;
@@ -78,6 +79,8 @@ public static class Utils
 
     public static object FromJson(string json, Type type) => JsonConvert.DeserializeObject(json, type, Settings);
 
+    public static string ToJson(object jsonObject) => JsonConvert.SerializeObject(jsonObject);
+
     /// <summary>
     /// Settings for JSON serializer
     /// </summary>
@@ -91,4 +94,35 @@ public static class Utils
             new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
         },
     };
+
+    public static string GetBinaryFolder()
+    {
+        return AppDomain.CurrentDomain.BaseDirectory;
+    }
+
+    public static string GetBinaryString()
+    {
+        return Assembly.GetExecutingAssembly().FullName;
+    }
+
+    public static List<Type> GetTypesSafe(this Assembly assembly)
+    {
+        List<Type> typeList = new List<Type>();
+        try
+        {
+            typeList = new List<Type>(assembly.GetTypes());
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            foreach (Type type in ex.Types)
+            {
+                if (type != null)
+                {
+                    typeList.Add(type);
+                }
+            }
+        }
+        
+        return typeList;
+    }
 }

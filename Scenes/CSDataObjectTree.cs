@@ -77,7 +77,6 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 
 	private void BuildTree()
 	{
-		GD.Print("Redrawing tree");
 		Clear();
 		Columns = 2;
 		HideRoot = true;

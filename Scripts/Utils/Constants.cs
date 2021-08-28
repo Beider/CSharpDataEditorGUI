@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.IO;
 using System.Reflection;
 using CSharpDataEditorDll;
 
@@ -34,7 +35,7 @@ public static class Constants
         {
             SettingsProject = new ConfigProjects();
             SettingsProject.Name = "C# Editor";
-            SettingsProject.BinaryLocation = Assembly.GetExecutingAssembly().Location;
+            SettingsProject.BinaryLocation = Utils.GetBinaryString();
             ConfigEditors editor = new ConfigEditors();
             editor.DataType = nameof(ConfigSettingsJson);
             editor.Name = "Settings";

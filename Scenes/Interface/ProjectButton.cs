@@ -84,14 +84,6 @@ public class ProjectButton : Control
 		Project = project;
 		Editor = editor;
 
-		// TODO: Validate
-		if (editor.DataConverter != null && editor.DataConverter != "" 
-			&& editor.DataConverterParam != null && editor.DataConverterParam != "")
-		{
-			
-			IDataConverter converter = new NewtonsoftJsonConverter();
-			converter.Init(editor.DataConverterParam, editor.DataType, project.BinaryLocation);
-		}
 		UpdateUI();
 	}
 

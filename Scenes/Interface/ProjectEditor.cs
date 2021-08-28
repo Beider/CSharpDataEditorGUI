@@ -24,6 +24,9 @@ public class ProjectEditor : Control, IProjectEditor
 	private int OpenIndex = 0;
 	private string CreateName = "";
 
+	private Control ErrorPanel;
+	private Label ErrorLabel;
+
 	private Timer CommandTimer = null;
 	private String CommandFilePath = null;
 	private DateTime CommandFileLastModificationTime = new DateTime(0);
@@ -58,6 +61,9 @@ public class ProjectEditor : Control, IProjectEditor
 
 		NewObjectDialog = FindNode("NewObjectDialog") as NewObjectDialog;
 		NewObjectDialog.OnEditorConfirmed += OnCreateNew;
+
+		ErrorPanel = FindNode("ErrorPanel") as Control;
+		ErrorLabel = FindNode("ErrorLbl") as Label;
 
 		NameLabel = FindNode("NameLabel") as RichTextLabel;
 	}
@@ -184,7 +190,13 @@ public class ProjectEditor : Control, IProjectEditor
 			UIManager.LogError($"Data converter not found {project.Name} - {editor.Name}");
 			return;
 		}
-		DataConverter.Init(editor.DataConverterParam, editor.DataType, project.BinaryLocation);
+		if (!DataConverter.Init(editor.DataConverterParam, editor.DataType, project.BinaryLocation))
+		{
+			// We got errors
+			ErrorPanel.Visible = true;
+			ErrorLabel.Text = DataConverter.GetError();
+			return;
+		}
 		string[] objectNames = DataConverter.GetValidObjectNames();
 		if (objectNames.Length > 0)
 		{

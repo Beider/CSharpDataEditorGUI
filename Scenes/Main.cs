@@ -25,14 +25,6 @@ public class Main : Control
 		OS.SetWindowTitle("C# Data Editor");
 	}
 
-	private void Reload()
-	{
-		GD.Print("Reloading");
-		NewtonsoftJsonConverter Converter = new NewtonsoftJsonConverter();
-		Converter.Init("E:\\Coding\\Godot\\CSharpDataEditor\\TestData", nameof(ConfigSettingsJson), Assembly.GetExecutingAssembly().Location);
-		Settings.InitTree("test", Converter);
-	}
-
 	private void OnSavePressed()
 	{
 		UIManager.Instance.SaveAll();
