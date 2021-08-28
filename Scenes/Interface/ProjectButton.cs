@@ -33,6 +33,7 @@ public class ProjectButton : Control
 		UIManager.Instance.OnEditorShown += OnToggleButtonClicked;
 		UIManager.Instance.OnEditorChanged += OnEditorChanged;
 		UIManager.Instance.OnEditorSave += OnEditorSave;
+        UIManager.Instance.OnEditorReloaded += OnEditorReloaded;
 		
 		UpdateUI();
 	}
@@ -40,6 +41,18 @@ public class ProjectButton : Control
 	public override void _ExitTree()
 	{
 		UIManager.Instance.OnEditorShown -= OnToggleButtonClicked;
+        UIManager.Instance.OnEditorChanged -= OnEditorChanged;
+		UIManager.Instance.OnEditorSave -= OnEditorSave;
+        UIManager.Instance.OnEditorReloaded -= OnEditorReloaded;
+	}
+
+    private void OnEditorReloaded(ConfigProjects project, ConfigEditors editor)
+	{
+		bool isThis = Project == project && Editor == editor;
+		if (isThis)
+		{
+			ChangeNotification.Visible = false;
+		}
 	}
 
 	private void OnEditorSave(ConfigProjects project, ConfigEditors editor)

@@ -24,6 +24,10 @@ public class ProjectEditor : Control, IProjectEditor
 	private int OpenIndex = 0;
 	private string CreateName = "";
 
+	private Timer CommandTimer = null;
+	private String CommandFilePath = null;
+	private DateTime CommandFileLastModificationTime = new DateTime(0);
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
@@ -184,8 +188,7 @@ public class ProjectEditor : Control, IProjectEditor
 		string[] objectNames = DataConverter.GetValidObjectNames();
 		if (objectNames.Length > 0)
 		{
-			EditedItemName = objectNames[0];
-			DataObjectTree.InitTree(objectNames[0], DataConverter);
+			EditObject(objectNames[0]);
 		}
 
 		if (!editor.AllowCreateNew)
@@ -196,8 +199,6 @@ public class ProjectEditor : Control, IProjectEditor
 		{
 			BtnOpen.Visible = false;
 		}
-
-		UpdateTitle();
 	}
 
 	private void UpdateTitle()
@@ -255,12 +256,21 @@ public class ProjectEditor : Control, IProjectEditor
 		if (DataConverter != null)
 		{
 			DataObjectTree.InitTree(objectName, DataConverter);
+			HasChanges = false;
+			BtnSave.Disabled = true;
+			EditedItemName = objectName;
+			UpdateTitle();
 		}
 	}
 
 	public bool IsEditorFor(ConfigProjects project, ConfigEditors editor)
 	{
 		return Project == project && Editor == editor;
+	}
+
+	public ConfigEditors GetConfigEditor()
+	{
+		return Editor;
 	}
 
 }

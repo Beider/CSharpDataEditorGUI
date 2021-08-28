@@ -5,6 +5,8 @@ using CSharpDataEditorDll;
 
 public static class Constants
 {
+    public const string COMMAND_FILE_NAME = "commands.csdelst";
+    public const string COMMAND_SEPARATOR = ":";
     public const string METADATA_COLLAPSED = "Collapsed";
     public const string METADATA_COLLAPSED_DRAG = "Collapsed_Drag";
     public const string METADATA_DISPLAY_OVERRIDE = "DisplayOverride";

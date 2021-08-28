@@ -26,4 +26,6 @@ public interface IProjectEditor
     /// <param name="editor"></param>
     /// <returns></returns>
     bool IsEditorFor(ConfigProjects project, ConfigEditors editor);
+
+    ConfigEditors GetConfigEditor();
 }

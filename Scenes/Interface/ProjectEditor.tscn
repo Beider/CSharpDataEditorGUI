@@ -84,8 +84,6 @@ __meta__ = {
 }
 
 [node name="BtnNew" type="Button" parent="GridContainer/Toolbar/GridContainer"]
-anchor_top = 0.0263158
-anchor_bottom = 0.0263158
 margin_left = 48.0
 margin_right = 92.0
 margin_bottom = 38.0
