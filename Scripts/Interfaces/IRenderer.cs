@@ -4,5 +4,5 @@ using CSharpDataEditorDll;
 
 public interface IRenderer
 {
-    void ShowRenderer(CSDataObjectMember dataObject, Rect2 position, IDataObjectDisplay display);
+    void ShowRenderer(CSDataObjectMember dataObject, int coulmn, Rect2 position, IDataObjectDisplay display);
 }

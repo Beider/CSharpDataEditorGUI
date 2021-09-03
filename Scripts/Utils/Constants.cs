@@ -15,7 +15,6 @@ public static class Constants
     public const string METADATA_VISMOD_SELF = "VMSelf";
     public const string METADATA_VISMOD_CHILDREN = "VMChildren";
     public const string METADATA_TREE_ITEM = "TreeItem";
-    public const string METADATA_EDITABLE_COLUMN_NUM = "EditableColumnNum";
     public const string IMAGE_ADD = "res://Assets/Images/add.png";
 	public const string IMAGE_REMOVE = "res://Assets/Images/remove.png";
 	public const string IMAGE_ERROR = "res://Assets/Images/hazard-sign.png";
@@ -43,6 +42,7 @@ public static class Constants
             editor.DataConverterParam = Settings.SettingsLocation();
             editor.AllowCreateNew = false;
             editor.AllowOpen = false;
+            editor.ShowRefreshButton = false;
             SettingsProject.Editors.Add(editor);
         }
         return SettingsProject;

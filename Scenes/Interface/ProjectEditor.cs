@@ -8,9 +8,11 @@ public class ProjectEditor : Control, IProjectEditor
 	private Button BtnSave;
 	private MenuButton BtnOpen;
 	private Button BtnNew;
+	private Button BtnRefresh;
 	private AcceptDialog SaveSettingsDialog;
 	private AcceptDialog ConfirmOpenDialog;
 	private AcceptDialog ConfirmNewDialog;
+	private AcceptDialog ConfirmRefreshDialog;
 	private RichTextLabel NameLabel;
 	private NewObjectDialog NewObjectDialog;
 
@@ -50,6 +52,9 @@ public class ProjectEditor : Control, IProjectEditor
 		BtnNew = FindNode("BtnNew") as Button;
 		BtnNew.Connect("pressed", this, nameof(OnNewButtonPressed));
 
+		BtnRefresh = FindNode("BtnRefresh") as Button;
+		BtnRefresh.Connect("pressed", this, nameof(OnRefreshPressed));
+
 		SaveSettingsDialog = FindNode("ConfirmSave") as AcceptDialog;
 		SaveSettingsDialog.Connect("confirmed", this, nameof(SaveConfirmed));
 
@@ -58,6 +63,9 @@ public class ProjectEditor : Control, IProjectEditor
 
 		ConfirmNewDialog = FindNode("ConfirmNew") as AcceptDialog;
 		ConfirmNewDialog.Connect("confirmed", this, nameof(CreateNew));
+
+		ConfirmRefreshDialog = FindNode("ConfirmRefresh") as AcceptDialog;
+		ConfirmRefreshDialog.Connect("confirmed", this, nameof(DoRefresh));
 
 		NewObjectDialog = FindNode("NewObjectDialog") as NewObjectDialog;
 		NewObjectDialog.OnEditorConfirmed += OnCreateNew;
@@ -89,7 +97,6 @@ public class ProjectEditor : Control, IProjectEditor
 		Vector2 postion = GetLocalPosition(BtnNew.RectSize, BtnNew);
 		postion.x += NewObjectDialog.RectSize.x / 2;
 		Rect2 pos = new Rect2(postion, NewObjectDialog.RectSize);
-		GD.Print(pos);
 		NewObjectDialog.Popup_(pos);
 	}
 
@@ -127,6 +134,28 @@ public class ProjectEditor : Control, IProjectEditor
 		DataObjectTree.InitTree(CreateName, DataConverter);
 		EditedItemName = CreateName;
 		OnEditorChanged();
+	}
+
+	private void OnRefreshPressed()
+	{
+		if (HasChanges && !Editor.AutoSave)
+		{
+			ConfirmRefreshDialog.PopupCentered();
+			return;
+		}
+		else if (Editor.AutoSave)
+		{
+			DataObjectTree.Save();
+		}
+		DoRefresh();
+	}
+
+	private void DoRefresh()
+	{
+		Init(Project, Editor, EditedItemName);
+		UIManager.EditorReloaded(Project, Editor);
+		HasChanges = false;
+		UpdateTitle();
 	}
 
 	/// <summary>
@@ -178,8 +207,12 @@ public class ProjectEditor : Control, IProjectEditor
 		UpdateTitle();
 	}
 
-
 	public void Init(ConfigProjects project, ConfigEditors editor)
+	{
+		Init(project, editor, null);
+	}
+
+	public void Init(ConfigProjects project, ConfigEditors editor, string objectToEdit)
 	{
 		Project = project;
 		Editor = editor;
@@ -197,20 +230,22 @@ public class ProjectEditor : Control, IProjectEditor
 			ErrorLabel.Text = DataConverter.GetError();
 			return;
 		}
-		string[] objectNames = DataConverter.GetValidObjectNames();
-		if (objectNames.Length > 0)
+		if (objectToEdit != null)
 		{
-			EditObject(objectNames[0]);
+			EditObject(objectToEdit);
+		}
+		else
+		{
+			string[] objectNames = DataConverter.GetValidObjectNames();
+			if (objectNames.Length > 0)
+			{
+				EditObject(objectNames[0]);
+			}
 		}
 
-		if (!editor.AllowCreateNew)
-		{
-			BtnNew.Visible = false;
-		}
-		if (!editor.AllowOpen)
-		{
-			BtnOpen.Visible = false;
-		}
+		BtnNew.Visible = editor.AllowCreateNew;
+		BtnOpen.Visible = editor.AllowOpen;
+		BtnRefresh.Visible = editor.ShowRefreshButton;
 	}
 
 	private void UpdateTitle()

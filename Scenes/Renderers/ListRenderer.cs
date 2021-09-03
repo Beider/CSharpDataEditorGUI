@@ -12,6 +12,8 @@ public class ListRenderer : ItemList, IRenderer
 
 	private CSDOList Renderer;
 
+    private int Column;
+
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
@@ -19,10 +21,11 @@ public class ListRenderer : ItemList, IRenderer
 		Connect("focus_exited", this, nameof(OnFocusExited));
 	}
 
-	public void ShowRenderer(CSDataObjectMember dataObject, Rect2 position, IDataObjectDisplay display)
+	public void ShowRenderer(CSDataObjectMember dataObject, int column, Rect2 position, IDataObjectDisplay display)
 	{
 		Clear();
 		DataObject = dataObject;
+        Column = column;
 		TreeItem = dataObject.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
 		Display = display;
 		
@@ -79,7 +82,7 @@ public class ListRenderer : ItemList, IRenderer
 			if (GetSelectedItems().Length > 0)
 			{
 				string value = GetItemText(GetSelectedItems()[0]);
-				Display.UpdateDataObject(DataObject, value);
+				Display.UpdateDataObject(DataObject, Column, value);
 			}
 			QueueFree();
 		}

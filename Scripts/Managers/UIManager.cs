@@ -111,13 +111,13 @@ public class UIManager : Node
 
     public void ShowSettings()
     {
+        ConfigProjects settings = Constants.GetSettingsProject();
         if (SettingsEditor == null)
         {
-            ConfigProjects settings = Constants.GetSettingsProject();
             SettingsEditor = NewEditor(settings, 0);
-            OnEditorShown(settings, settings.Editors[0]);
         }
         ShowEditor(SettingsEditor);
+        OnEditorShown(settings, settings.Editors[0]);
     }
 
     public static void ShowEditor(ConfigProjects project, ConfigEditors editor)
@@ -337,6 +337,12 @@ public class UIManager : Node
             Instance.ShowEditor(pEditor);
             Instance.OnEditorShown(project, editor);
         }
+    }
+
+    public static void EditorReloaded(ConfigProjects project, ConfigEditors editor)
+    {
+        Instance.OnEditorReloaded(project, editor);
+        Instance.UpdateSaveAllState(project, editor, false);
     }
 
 #endregion

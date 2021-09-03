@@ -90,6 +90,7 @@ public static class Utils
         Formatting = Formatting.Indented,
         DateParseHandling = DateParseHandling.None,
         ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+        MissingMemberHandling = MissingMemberHandling.Ignore,
         Converters = {
             new IsoDateTimeConverter { DateTimeStyles = DateTimeStyles.AssumeUniversal }
         },

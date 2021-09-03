@@ -239,13 +239,13 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 			{
 				return;
 			}
-			CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(Constants.METADATA_DISPLAY_OVERRIDE_TARGET, null);
+			CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(Constants.METADATA_DISPLAY_OVERRIDE_TARGET + column, null);
 			if (target == null)
 			{
 				target = (CSDataObjectMember)dataObject;
 			}
 			target.SetValue(target.InitialValue);
-			ItemEdited(target);
+			ItemEdited(target, column);
             OnChange();
 		}
 		RefreshAllVisibilityMods();
@@ -267,21 +267,29 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		string newValue = item.GetText(column);
 
 		// Deal with target override
-		CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(Constants.METADATA_DISPLAY_OVERRIDE_TARGET, null);
+		CSDataObjectMember target = dataObject.GetMetadata<CSDataObjectMember>(Constants.METADATA_DISPLAY_OVERRIDE_TARGET + column, null);
 		if (target == null)
 		{
 			target = (CSDataObjectMember)dataObject;
 		}
 		if (target.SetValue(newValue))
         {
-		    ItemEdited(target);
+		    ItemEdited(target, column);
 		    RefreshAllVisibilityMods();
             OnChange();
         }
 	}
 
-	private void ItemEdited(CSDataObjectMember target)
+	private void ItemEdited(CSDataObjectMember target, int column)
 	{
+        CSDOOnChangeValueUpdater onValueChange = target.GetCustomAttribute<CSDOOnChangeValueUpdater>();
+        CSDOOnChangeValueUpdater.RefreshTargets refreshTarget = CSDOOnChangeValueUpdater.RefreshTargets.NOTHING;
+        if (onValueChange != null)
+        {
+            refreshTarget = onValueChange.OnValueUpdate(target);
+            onValueChange.GetErrors().ForEach(error => GD.Print(error));
+        }
+
 		TreeItem treeItem = target.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
 		if (treeItem != null)
 		{
@@ -290,22 +298,38 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		}
 
 		// Deal with display override
-		CSDataObject displayOverride = target.GetMetadata<CSDataObject>(Constants.METADATA_DISPLAY_OVERRIDE, null);
+		CSDataObject displayOverride = target.GetMetadata<CSDataObject>(Constants.METADATA_DISPLAY_OVERRIDE+column, null);
 		if (displayOverride != null)
 		{
 			TreeItem overrideItem = displayOverride.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
 			SetItemText(overrideItem, displayOverride);
 			UpdateErrorState(overrideItem, 0, target.CurrentError);
 		}
+
+        RefreshBasedOnRefreshTarget(refreshTarget);
 	}
 
-	public void UpdateDataObject(CSDataObjectMember dataObject, string newValue)
+    private void RefreshBasedOnRefreshTarget(CSDOOnChangeValueUpdater.RefreshTargets target)
+    {
+        // Deal with OnChangeValueUpdater (self is already refreshed)
+        // For now we are doing complete refresh even for parent class
+        switch (target)
+        {
+            case CSDOOnChangeValueUpdater.RefreshTargets.PARENT_CLASS:
+            case CSDOOnChangeValueUpdater.RefreshTargets.ALL:
+                Redraw = true;
+                break;
+            default:
+                break;
+        }
+    }
+
+	public void UpdateDataObject(CSDataObjectMember dataObject, int column, string newValue)
 	{
 		TreeItem item = dataObject.GetMetadata<TreeItem>(Constants.METADATA_TREE_ITEM, null);
-		int column = dataObject.GetMetadata<int>(Constants.METADATA_EDITABLE_COLUMN_NUM, 1);
 		if (dataObject.SetValue(newValue))
         {
-		    ItemEdited(dataObject);
+		    ItemEdited(dataObject, column);
 		    RefreshAllVisibilityMods();
             OnChange();
         }
@@ -327,9 +351,14 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 	{
 		// Get the things we need
 		TreeItem item = GetEdited();
-		int col = GetEditedColumn();
+		int column = GetEditedColumn();
 		string key = (string)item.GetMetadata(0);
 		CSDataObject dataObject = DataObjectClass.GetObjectByKey(key);
+        CSDataObject displayOverride = dataObject.GetMetadata<CSDataObject>(Constants.METADATA_DISPLAY_OVERRIDE_TARGET + column, null);
+        if (displayOverride != null)
+        {
+            dataObject = displayOverride;
+        }
 		CSDORenderer renderer = dataObject.GetCustomAttribute<CSDORenderer>();
 		PackedScene scene = Settings.GetRendererScene(renderer.GetRenderType());
 
@@ -338,7 +367,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		{
 			Control instance = scene.Instance() as Control;
 			AddChild(instance);
-			((IRenderer)instance).ShowRenderer((CSDataObjectMember) dataObject, GetCustomPopupRect(), this);
+			((IRenderer)instance).ShowRenderer((CSDataObjectMember) dataObject, column, GetCustomPopupRect(), this);
 		}
 	}
 
@@ -478,44 +507,35 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 
 		// SET LEFT COLUMN VALUE
 		CSDODisplayNameOverride displayOverride = dataObject.GetCustomAttribute<CSDODisplayNameOverride>();
-		CSDODescription description = null;
 		if (displayOverride != null)
 		{
-			CSDataObjectMember displayOverrideMember = (CSDataObjectMember)dataObject.GetObjectByKey(displayOverride.MemberName+"/");
-			string currentValue = (string)displayOverrideMember.CurrentValue;
-			displayOverrideMember.SetMetadata(Constants.METADATA_DISPLAY_OVERRIDE, dataObject);
-			dataObject.SetMetadata(Constants.METADATA_DISPLAY_OVERRIDE_TARGET, displayOverrideMember);
-			dataObject.SetMetadata(Constants.METADATA_EDITABLE_COLUMN_NUM, 0);
-			description = displayOverrideMember.GetCustomAttribute<CSDODescription>();
-			SetColor(item, displayOverrideMember, 0);
-			item.SetEditable(0, true);
-			if (currentValue != null && currentValue != "")
-			{
-				item.SetText(0, currentValue);
-			}
+            UpdateDisplayOverrideMember(item, 0, dataObject, displayOverride.MemberName);
+            if (displayOverride.SecondColumnMemberName != null)
+            {
+                UpdateDisplayOverrideMember(item, 1, dataObject, displayOverride.SecondColumnMemberName);
+            }
 		}
 		else
 		{
-			description = dataObject.GetCustomAttribute<CSDODescription>();
+            SetDescription(item, dataObject.GetCustomAttribute<CSDODescription>());
 			item.SetText(0, dataObject.GetName());
-		}
-
-		// TOOLTIP
-		if (description != null)
-		{
-			item.SetTooltip(0, description.Description);
-			item.SetTooltip(1, description.Description);
 		}
 
 		// SET RIGHT COLUMN VALUE
 		if (dataObject is CSDataObjectMember)
 		{
 			string currentValue = ((CSDataObjectMember)dataObject).CurrentValue;
-			dataObject.SetMetadata(Constants.METADATA_EDITABLE_COLUMN_NUM, 1);
-			SetColor(item, (CSDataObjectMember) dataObject, 1);
-			item.SetEditable(1, true);
+			SetColor(item, dataObject, 1);
+            if (dataObject.GetCustomAttribute<CSDONotEditable>() == null)
+            {
+			    item.SetEditable(1, true);
+            }
 			item.SetText(1, currentValue);
 		}
+        else
+        {
+            SetColor(item, dataObject, 0);
+        }
 		if (dataObject.GetMetadata(Constants.METADATA_COLLAPSED) != null)
 		{
 			item.Collapsed = (bool)dataObject.GetMetadata(Constants.METADATA_COLLAPSED, false);
@@ -529,13 +549,50 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		AddCollectionButtons(item, dataObject);
 	}
 
+    private void UpdateDisplayOverrideMember(TreeItem item, int column, CSDataObject dataObject, string displayOverrideName)
+    {
+        CSDataObjectMember displayOverrideMember = (CSDataObjectMember)dataObject.GetObjectByKey(displayOverrideName+"/");
+        if (displayOverrideMember == null)
+        {
+            return;
+        }
+        string currentValue = (string)displayOverrideMember.CurrentValue;
+        displayOverrideMember.SetMetadata(Constants.METADATA_DISPLAY_OVERRIDE + column, dataObject);
+        dataObject.SetMetadata(Constants.METADATA_DISPLAY_OVERRIDE_TARGET + column, displayOverrideMember);
+        SetDescription(item, displayOverrideMember.GetCustomAttribute<CSDODescription>(), column);
+        SetColor(item, displayOverrideMember, column);
+        if (displayOverrideMember.GetCustomAttribute<CSDONotEditable>() == null)
+        {
+            item.SetEditable(column, true);
+        }
+        if (currentValue != null && currentValue != "")
+        {
+            item.SetText(column, currentValue);
+        }
+    }
+
+    private void SetDescription(TreeItem item, CSDODescription description, int column = -1)
+    {
+        if (description != null)
+		{
+            if (column < 0 || column == 0)
+            {
+			    item.SetTooltip(0, description.Description);
+            }
+            if (column < 0 || column == 1)
+            {
+			    item.SetTooltip(1, description.Description);
+            }
+		}
+    }
+
 	/// <summary>
 	/// Set the item color
 	/// </summary>
 	/// <param name="item">The tree item</param>
 	/// <param name="renderer">The renderer to use</param>
 	/// <param name="dataObject">The data object we are rendering</param>
-	private void SetColor(TreeItem item, CSDataObjectMember dataObject, int textColumn)
+	private void SetColor(TreeItem item, CSDataObject dataObject, int textColumn)
 	{
 		CSDORenderer renderer = dataObject.GetCustomAttribute<CSDORenderer>();
 		if (renderer == null)
@@ -546,13 +603,18 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		{
 			item.SetCellMode(textColumn, TreeItem.TreeCellMode.Custom);
 		}
-		Color color = Utils.ResolveColorFromString(renderer.GetColor(dataObject.CurrentValue, dataObject));
+        string value = null;
+        if (dataObject is CSDataObjectMember)
+        {
+            value = ((CSDataObjectMember)dataObject).CurrentValue;
+        }
+		Color color = Utils.ResolveColorFromString(renderer.GetColor(value, dataObject));
 		if (color != Colors.Transparent)
 		{
 			item.SetCustomColor(textColumn, color);
 		}
 
-		color = Utils.ResolveColorFromString(renderer.GetBgColor(dataObject.CurrentValue, dataObject));
+		color = Utils.ResolveColorFromString(renderer.GetBgColor(value, dataObject));
 		if (color != Colors.Transparent)
 		{
 			item.SetCustomBgColor(0, color);

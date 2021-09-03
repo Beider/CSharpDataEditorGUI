@@ -91,4 +91,8 @@ public partial class ConfigEditors
     [JsonProperty("allowopen")]
     [CSDODescription("Decides if we allow you to open objects manually in this editor, commands still work even if this is false")]
     public bool AllowOpen = true;
+
+    [JsonProperty("showrefresh")]
+    [CSDODescription("Decides if we show the refresh button or not")]
+    public bool ShowRefreshButton = true;
 }

@@ -35,17 +35,26 @@ public class Settings : Node
 
     public static void ReloadConfiguration()
     {
+        bool configLoaded = false;
         string path = SettingsLocation();
-        if (!path.EndsWith("/") && ! path.EndsWith("\\"))
+        try
         {
-            path += "/";
-        }
-        path += SETTINGS_FILE_NAME + ".json";
-        if (System.IO.File.Exists(path))
+            if (!path.EndsWith("/") && ! path.EndsWith("\\"))
+            {
+                path += "/";
+            }
+            path += SETTINGS_FILE_NAME + ".json";
+            if (System.IO.File.Exists(path))
+            {
+                Instance.Configuration = Utils.ReadJsonFile<ConfigSettingsJson>(path);
+                configLoaded = true;
+            }
+        } 
+        catch (Exception ex)
         {
-            Instance.Configuration = Utils.ReadJsonFile<ConfigSettingsJson>(path);
+            GD.PrintErr(ex.StackTrace);
         }
-        else
+        if (!configLoaded)
         {
             Instance.Configuration = new ConfigSettingsJson();
             string json = Utils.ToJson(Instance.Configuration);

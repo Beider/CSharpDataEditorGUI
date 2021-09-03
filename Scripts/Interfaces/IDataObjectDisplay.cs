@@ -4,5 +4,5 @@ using CSharpDataEditorDll;
 
 public interface IDataObjectDisplay
 {
-    void UpdateDataObject(CSDataObjectMember dataObject, string newValue);
+    void UpdateDataObject(CSDataObjectMember dataObject, int column, string newValue);
 }
