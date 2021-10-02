@@ -599,7 +599,7 @@ public class CSDataObjectTree : Tree, IDataObjectDisplay
 		{
 			return;
 		}
-		if (renderer.GetRenderType() != null)
+		if (renderer.GetRenderType() != null && dataObject.GetType() != typeof(CSDataObjectMemberArray))
 		{
 			item.SetCellMode(textColumn, TreeItem.TreeCellMode.Custom);
 		}
